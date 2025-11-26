@@ -1,71 +1,136 @@
 # Knowledge Model vs. Vector Retrieval Benchmark (Advanced)
+
 **Domain:** Medical (Clinical Decision Support)
-**Date:** Wed Nov 26 16:57:36 BDT 2025
+
+**Date:** 2025-11-26T18:55:05.144309047Z
 
 This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on complex scenarios requiring structural reasoning (Multi-hop, Intersection, Aggregation).
 
+---
+
 ## 1. Network Hop: Patient Zero Link
-**Clinical Question:** "Find all patients treated by the same doctor as 'PT-10001'."
 
-### Knowledge Model Output (Graph + Vector)
-**Duration:** 37555ms
+**Objective:** Find all patients treated by the same doctor as 'PT-10001'.
 
-To find all patients treated by the same doctor as PT-10001, I will first identify the doctor associated with PT-10001 and then retrieve other patients treated by that doctor.
+**Query:** "Find all patients treated by the same doctor as PT-10001"
 
-1. I will use the retrieve_context tool to find information about PT-10001 and identify the doctor associated with this patient.
-2. Once I have the doctor's information, I will search for other patients treated by the same doctor.
+### Results Comparison
 
-Let's start by retrieving information about PT-1_ten_patient.
-<function=retrieve_context>
-<parameter=textQuery>
- patients treated by doctor PT-10001
-</parameter>
-<parameter-graphQuery>{"targets":[{"description":"PT-10001"}]}
-</parameter>
-</function>
-clave
+| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
+|--------|------------------------|----------------------------|-------------|
+| **Latency** | 43ms | 77ms | ↑79.1% |
+| **Chunks Retrieved** | 5 | 5 | - |
+| **Nodes Retrieved** | 0 | 50 | +50 |
+| **Edges Traversed** | 0 | 77 | +77 |
+| **Structural Coverage** | ✗ | ✓ | Better |
 
-### Vector-Only Output (Baseline RAG)
-**Duration:** 33387ms
+### Analysis
 
- To find all patients treated by the same doctor as 'PT-10001', we first need to identify which doctor treated patient 'PT-10001'.
+**Context Sample (Vector-Only):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10148
+**Provider ID:** DOC-101
+**Date:** 2025-11-26
 
-Looking at clinical note #10:
+**SUBJECTIVE:**
+Patient presents for follow-up of Rheumatoid Arthritis. Reports swelling, joint pain...
+```
 
-**CLINical Encounter Note**
-**Patient ID:** PT-10002
-**Provider ID:** DOC-104
-**Date:** 2025-11-25
+**Context Sample (Knowledge Model):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10008
+**Provider ID:** DOC-102
+**Date:** 2025-11-26
 
-Patient 'PT-10002' was treated by provider 'DOC-104'.
-
-However, patient 'PT-10001' does not appear explicitly listed among the given clinical encounter notes provided aboveschlü
-
+**SUBJECTIVE:**
+Patient presents for follow-up of Essential Hypertension. Reports headache, noseblee...
+```
 
 ---
 
 ## 2. Intersection: Condition + Medication
-**Clinical Question:** "Find patients diagnosed with 'Rheumatoid Arthritis' who are also prescribed 'Albuterol'."
 
-### Knowledge Model Output (Graph + Vector)
-**Duration:** 52174ms
+**Objective:** Find patients diagnosed with 'Rheumatoid Arthritis' who are also prescribed 'Albuterol'.
 
-To find patients diagnosed with Rheumatoid Arthritis who are also prescribed Albuterol, I will perform a targeted search using the knowledge graph. This involves resolving specific entities such as "R rheumatoid arthritis" and " drug albuterol" within the graph. I will then traverse relationships between these entities to identify patients meeting both criteria.
+**Query:** "Find patients diagnosed with Rheumatoid Arthritis who are also prescribed Albuterol"
 
-Here’s my plan:
-1. Use the ` retrieve_context` tool to search for patients diagnosed with Rheumatoid Arthritis.
-2. Similarly, search for patients prescribed Albuterol.
-3. Combine these results to identify overlapping patients who meet both criteria.
+### Results Comparison
 
-I'll start by retrieving context for patients diagnosed with Rheumatoid Arthritis.
-```json
-{"graphQuery":{"targets":[{"description":"Patient diagnosed with Rheumatoid Arthritis"}]}, "textQuery":" patients diagnosed with Rheumatoid Arthritis"}
+| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
+|--------|------------------------|----------------------------|-------------|
+| **Latency** | 26ms | 55ms | ↑111.5% |
+| **Chunks Retrieved** | 5 | 5 | - |
+| **Nodes Retrieved** | 0 | 50 | +50 |
+| **Edges Traversed** | 0 | 60 | +60 |
+| **Structural Coverage** | ✗ | ✓ | Better |
+
+### Analysis
+
+**Context Sample (Vector-Only):**
 ```
-Now I will retrieve context for patients prescribed Albuterol.
-```json
-{"graphQuery":{"targets":[{" description":"Patient prescribed Albuterol"}]}, "textQuery":" patients prescribed Albuterol"}
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10048
+**Provider ID:** DOC-102
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Rheumatoid Arthritis. Reports joint pain, stiffnes...
 ```
 
-### Vector-Only Output (Baseline RAG)
-**Duration:** 206729ms
+**Context Sample (Knowledge Model):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10043
+**Provider ID:** DOC-114
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Rheumatoid Arthritis. Reports swelling, stiffness....
+```
+
+---
+
+## 3. Aggregation: Provider Pattern
+
+**Objective:** List doctors who are treating more than one patient with 'Rheumatoid Arthritis'.
+
+**Query:** "List doctors who are treating more than one patient with Rheumatoid Arthritis"
+
+### Results Comparison
+
+| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
+|--------|------------------------|----------------------------|-------------|
+| **Latency** | 22ms | 67ms | ↑204.5% |
+| **Chunks Retrieved** | 5 | 5 | - |
+| **Nodes Retrieved** | 0 | 50 | +50 |
+| **Edges Traversed** | 0 | 70 | +70 |
+| **Structural Coverage** | ✗ | ✓ | Better |
+
+### Analysis
+
+**Context Sample (Vector-Only):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10046
+**Provider ID:** DOC-102
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Rheumatoid Arthritis. Reports joint pain, stiffnes...
+```
+
+**Context Sample (Knowledge Model):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10046
+**Provider ID:** DOC-102
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Rheumatoid Arthritis. Reports joint pain, stiffnes...
+```
+
+---
 

@@ -2,7 +2,7 @@
 
 **Domain:** Medical (Clinical Decision Support)
 
-**Date:** 2025-11-26T18:21:53.709395519Z
+**Date:** 2025-11-26T18:57:41.864543108Z
 
 This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on complex scenarios requiring structural reasoning.
 
@@ -18,7 +18,7 @@ This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **K
 
 | Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
 |--------|------------------------|----------------------------|-------------|
-| **Latency** | 46ms | 76ms | ↑65.2% |
+| **Latency** | 56ms | 83ms | ↑48.2% |
 | **Chunks Retrieved** | 5 | 5 | - |
 | **Nodes Retrieved** | 0 | 50 | +50 |
 | **Edges Traversed** | 0 | 84 | +84 |
@@ -60,7 +60,7 @@ Patient presents for follow-up of Essential Hypertension. Reports headache, shor
 
 | Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
 |--------|------------------------|----------------------------|-------------|
-| **Latency** | 20ms | 48ms | ↑140.0% |
+| **Latency** | 26ms | 48ms | ↑84.6% |
 | **Chunks Retrieved** | 5 | 5 | - |
 | **Nodes Retrieved** | 0 | 50 | +50 |
 | **Edges Traversed** | 0 | 75 | +75 |
@@ -102,11 +102,11 @@ Patient presents for follow-up of Bronchial Asthma. Reports chest tightness, cou
 
 | Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
 |--------|------------------------|----------------------------|-------------|
-| **Latency** | 31ms | 44ms | ↑41.9% |
+| **Latency** | 26ms | 54ms | ↑107.7% |
 | **Chunks Retrieved** | 5 | 5 | - |
-| **Nodes Retrieved** | 0 | 0 | +0 |
-| **Edges Traversed** | 0 | 0 | +0 |
-| **Structural Coverage** | ✗ | ✗ | Same |
+| **Nodes Retrieved** | 0 | 50 | +50 |
+| **Edges Traversed** | 0 | 54 | +54 |
+| **Structural Coverage** | ✗ | ✓ | Better |
 
 ### Analysis
 
@@ -124,12 +124,12 @@ Patient presents for follow-up of Type 2 Diabetes Mellitus. Reports blurred visi
 **Context Sample (Knowledge Model):**
 ```
 **CLINICAL ENCOUNTER NOTE**
-**Patient ID:** PT-10084
-**Provider ID:** DOC-110
+**Patient ID:** PT-10089
+**Provider ID:** DOC-105
 **Date:** 2025-11-26
 
 **SUBJECTIVE:**
-Patient presents for follow-up of Type 2 Diabetes Mellitus. Reports blurred vision, ...
+Patient presents for follow-up of Type 2 Diabetes Mellitus. Reports fatigue, polydip...
 ```
 
 ---

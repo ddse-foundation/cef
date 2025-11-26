@@ -203,25 +203,41 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
                                 // Filter by typeHint if provided
                                 if (typeHint == null || typeHint.isEmpty()) {
                                     log.debug("No typeHint filter, accepting node: {}", nodeId);
-                                    return Mono.just(nodeId);
+                                    return Flux.just(nodeId);
                                 }
 
                                 // Look up node and check if label matches typeHint
                                 return graphStore.getNode(nodeId)
-                                        .doOnNext(node -> log.debug(
-                                                "Found node: id={}, label='{}', typeHint='{}', match={}",
-                                                node.getId(), node.getLabel(), typeHint,
-                                                typeHint.equals(node.getLabel())))
-                                        .switchIfEmpty(Mono.defer(() -> {
+                                        .flatMapMany(node -> {
+                                            boolean directMatch = typeHint.equals(node.getLabel());
+                                            log.debug("Found node: id={}, label='{}', typeHint='{}', match={}",
+                                                    node.getId(), node.getLabel(), typeHint, directMatch);
+
+                                            if (directMatch) {
+                                                return Flux.just(node.getId());
+                                            }
+
+                                            log.debug(
+                                                    "Node {} label mismatch ({} vs {}). Searching neighbors for typeHint match.",
+                                                    nodeId, node.getLabel(), typeHint);
+
+                                            return graphStore.getNeighbors(nodeId)
+                                                    .doOnNext(neighbor -> log.debug(
+                                                            "Neighbor candidate: id={}, label='{}'", neighbor.getId(),
+                                                            neighbor.getLabel()))
+                                                    .filter(neighbor -> typeHint.equals(neighbor.getLabel()))
+                                                    .map(Node::getId)
+                                                    .take(topK)
+                                                    .switchIfEmpty(Flux.defer(() -> {
+                                                        log.debug(
+                                                                "No neighbors matching typeHint='{}' found within 1 hop of node {}",
+                                                                typeHint, nodeId);
+                                                        return Flux.<UUID>empty();
+                                                    }));
+                                        })
+                                        .switchIfEmpty(Flux.defer(() -> {
                                             log.warn("Node {} not found in graph store!", nodeId);
-                                            return Mono.empty();
-                                        }))
-                                        .filter(node -> typeHint.equals(node.getLabel()))
-                                        .map(Node::getId)
-                                        .switchIfEmpty(Mono.defer(() -> {
-                                            log.debug("Node {} filtered out (label mismatch with typeHint={})", nodeId,
-                                                    typeHint);
-                                            return Mono.empty();
+                                            return Flux.<UUID>empty();
                                         }));
                             })
                             .collectList();
