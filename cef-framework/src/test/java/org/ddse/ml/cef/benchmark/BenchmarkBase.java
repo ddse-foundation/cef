@@ -50,9 +50,7 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
         String approach;
         long latencyMs;
         int chunksRetrieved;
-        int nodesRetrieved;
-        int edgesTraversed;
-        String contextSample;
+        List<String> chunkSummaries = List.of();
 
         public BenchmarkMetrics(String approach) {
             this.approach = approach;
@@ -72,15 +70,13 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
 
         // 1. Run Vector Only (Naive RAG)
         BenchmarkMetrics vectorMetrics = runVectorOnly(query);
-        logger.info("Vector-Only: Latency: {}ms, Chunks: {}, Nodes: {}, Edges: {}",
-                vectorMetrics.latencyMs, vectorMetrics.chunksRetrieved,
-                vectorMetrics.nodesRetrieved, vectorMetrics.edgesTraversed);
+        logger.info("Vector-Only: Latency: {}ms, Chunks: {}",
+                vectorMetrics.latencyMs, vectorMetrics.chunksRetrieved);
 
         // 2. Run Knowledge Model (Graph RAG)
         BenchmarkMetrics kmMetrics = runKnowledgeModel(query, graphHints);
-        logger.info("Knowledge Model: Latency: {}ms, Chunks: {}, Nodes: {}, Edges: {}",
-                kmMetrics.latencyMs, kmMetrics.chunksRetrieved,
-                kmMetrics.nodesRetrieved, kmMetrics.edgesTraversed);
+        logger.info("Knowledge Model: Latency: {}ms, Chunks: {}",
+                kmMetrics.latencyMs, kmMetrics.chunksRetrieved);
 
         // Write comparison table
         writeComparisonTable(writer, vectorMetrics, kmMetrics);
@@ -110,9 +106,7 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
 
         if (result != null) {
             metrics.chunksRetrieved = result.getChunks() != null ? result.getChunks().size() : 0;
-            metrics.nodesRetrieved = result.getNodes() != null ? result.getNodes().size() : 0;
-            metrics.edgesTraversed = result.getEdges() != null ? result.getEdges().size() : 0;
-            metrics.contextSample = extractContextSample(result);
+            metrics.chunkSummaries = summarizeChunks(result);
         }
 
         return metrics;
@@ -141,9 +135,7 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
 
         if (result != null) {
             metrics.chunksRetrieved = result.getChunks() != null ? result.getChunks().size() : 0;
-            metrics.nodesRetrieved = result.getNodes() != null ? result.getNodes().size() : 0;
-            metrics.edgesTraversed = result.getEdges() != null ? result.getEdges().size() : 0;
-            metrics.contextSample = extractContextSample(result);
+            metrics.chunkSummaries = summarizeChunks(result);
         }
 
         return metrics;
@@ -193,12 +185,23 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
     /**
      * Extract a sample of context for display.
      */
-    private String extractContextSample(RetrievalResult result) {
-        if (result.getChunks() != null && !result.getChunks().isEmpty()) {
-            String content = result.getChunks().get(0).getContent();
-            return content.length() > 200 ? content.substring(0, 200) + "..." : content;
+    private List<String> summarizeChunks(RetrievalResult result) {
+        if (result.getChunks() == null || result.getChunks().isEmpty()) {
+            return List.of("(no chunks)");
         }
-        return "(No context retrieved)";
+
+        List<String> summaries = new ArrayList<>();
+        result.getChunks().forEach(chunk -> {
+            String content = chunk.getContent() != null ? chunk.getContent().replace('\n', ' ') : "";
+            if (content.length() > 160) {
+                content = content.substring(0, 160) + "...";
+            }
+            summaries.add(String.format("%s | node=%s | %s",
+                    chunk.getId(),
+                    chunk.getLinkedNodeId(),
+                    content));
+        });
+        return summaries;
     }
 
     /**
@@ -223,25 +226,6 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
                 kmMetrics.chunksRetrieved > vectorMetrics.chunksRetrieved
                         ? "+" + (kmMetrics.chunksRetrieved - vectorMetrics.chunksRetrieved)
                         : "-");
-
-        // Nodes
-        writer.printf("| **Nodes Retrieved** | %d | %d | +%d |%n",
-                vectorMetrics.nodesRetrieved, kmMetrics.nodesRetrieved,
-                kmMetrics.nodesRetrieved - vectorMetrics.nodesRetrieved);
-
-        // Edges
-        writer.printf("| **Edges Traversed** | %d | %d | +%d |%n",
-                vectorMetrics.edgesTraversed, kmMetrics.edgesTraversed,
-                kmMetrics.edgesTraversed - vectorMetrics.edgesTraversed);
-
-        // Structural Coverage
-        boolean vectorCoverage = vectorMetrics.nodesRetrieved > 0;
-        boolean kmCoverage = kmMetrics.nodesRetrieved > 0;
-        writer.printf("| **Structural Coverage** | %s | %s | %s |%n",
-                vectorCoverage ? "✓" : "✗",
-                kmCoverage ? "✓" : "✗",
-                kmCoverage == vectorCoverage ? "Same" : (kmCoverage ? "Better" : "Worse"));
-
         writer.println();
     }
 
@@ -250,18 +234,18 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
      */
     private void writeAnalysis(PrintWriter writer, BenchmarkMetrics vectorMetrics,
             BenchmarkMetrics kmMetrics) {
-        writer.println("### Analysis");
+        writer.println("### Raw Results");
         writer.println();
 
-        writer.println("**Context Sample (Vector-Only):**");
+        writer.println("**Vector-Only (Naive RAG):**");
         writer.println("```");
-        writer.println(vectorMetrics.contextSample);
+        vectorMetrics.chunkSummaries.forEach(writer::println);
         writer.println("```");
         writer.println();
 
-        writer.println("**Context Sample (Knowledge Model):**");
+        writer.println("**Knowledge Model (Graph RAG):**");
         writer.println("```");
-        writer.println(kmMetrics.contextSample);
+        kmMetrics.chunkSummaries.forEach(writer::println);
         writer.println("```");
         writer.println();
     }

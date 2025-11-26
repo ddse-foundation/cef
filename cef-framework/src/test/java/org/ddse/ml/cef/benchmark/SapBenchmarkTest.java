@@ -20,33 +20,37 @@ class SapBenchmarkTest extends BenchmarkBase {
 
     @BeforeEach
     void setup() throws IOException {
-        // Load SAP Data
-        SapDataParser parser = new SapDataParser(graphStore, csvParser);
+        // Reset shared stores loaded by MedicalDataTestBase so the SAP dataset stands alone
+        graphStore.clear().block();
+        chunkStore.deleteAll().block();
+
+        SapDataParser parser = new SapDataParser(graphStore, csvParser, indexer);
         parser.parseAndLoad();
     }
 
     @Test
     @DisplayName("Generate SAP Benchmark Report")
-    void generateSapBenchmarkReport() throws IOException {
+        void generateSapBenchmarkReport() throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(REPORT_FILE))) {
-            writeHeader(writer, "SAP Knowledge Model Benchmark", "Enterprise ERP (Financial & Supply Chain)",
-                    "This report demonstrates the Knowledge Model's ability to parse raw SAP table dumps (CSV) and answer complex, temporal queries that Vector Search cannot handle.");
+            writeHeader(writer, "Knowledge Model vs. Vector Retrieval Benchmark (SAP)",
+                "Enterprise ERP (Financial & Supply Chain)",
+                "This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on SAP ERP scenarios that require temporal reasoning and supply-chain awareness.");
 
-            // Scenario 1: Financial GL Analyzer
+            // Scenario 1: Shadow IT Detection
             runScenario(writer,
-                    "Scenario 1: Shadow IT Detection",
-                    "Analyze the 'Software Subscription' spend trend for the Engineering department over the last 4 quarters. Flag any vendors with increasing costs that do not have a corresponding budget entry.",
-                    "Analyze spend trend for Engineering department and flag suspicious vendors",
-                    "Expected: Vendors with increasing costs in Engineering department without matching budget entries");
+                "1. Shadow IT Detection",
+                "Analyze the 'Software Subscription' spend trend for the Engineering department over the last 4 quarters. Flag any vendors with increasing costs that do not have a corresponding budget entry.",
+                "Analyze spend trend for Engineering department and flag suspicious vendors",
+                "CostCenter", "INCURRED_BY", "PAID_TO");
 
-            // Scenario 2: Supply Chain Impact
+            // Scenario 2: Typhoon Impact on Holiday Laptop Delivery
             runScenario(writer,
-                    "Scenario 2: Typhoon Impact on Holiday Laptop Delivery",
-                    "A Typhoon has hit Taiwan for 3 days. Visualize the impact on the 'Holiday Laptop' delivery schedule.",
-                    "Impact of Typhoon in Taiwan on Holiday Laptop delivery",
-                    "Expected: Delayed deliveries from Taiwan-based suppliers, propagated through supply chain to Holiday Laptop product");
+                "2. Typhoon Impact: Holiday Laptop Delivery",
+                "A Typhoon has hit Taiwan for 3 days. Visualize the impact on the 'Holiday Laptop' delivery schedule.",
+                "Impact of Typhoon in Taiwan on Holiday Laptop delivery",
+                "Material", "COMPOSED_OF", "SUPPLIED_BY", "LOCATED_IN", "AFFECTS_LOCATION");
 
             logger.info("SAP Benchmark report generated at: " + REPORT_FILE);
         }
-    }
+        }
 }
