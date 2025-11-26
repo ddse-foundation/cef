@@ -1,0 +1,23 @@
+# Test Configuration for CEF Framework
+# Uses Ollama for embeddings with nomic-embed-text model
+
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  embedding:
+    batch-size: 10  # Smaller batch for tests
+  
+  graph:
+    in-memory: true
+    load-on-startup: false
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.ai: DEBUG

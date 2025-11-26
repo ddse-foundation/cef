@@ -1,0 +1,135 @@
+# CEF Framework Default Configuration
+# Author: mrmanna
+# Organization: DDSE
+
+cef:
+  # Database Configuration (DuckDB is default, PostgreSQL is optional)
+  database:
+    type: duckdb  # Options: duckdb, postgresql
+    duckdb:
+      path: ./data/cef.duckdb
+      schema: graph
+    postgresql:
+      enabled: false
+      host: localhost
+      port: 5432
+      database: cef_db
+      username: cef_user
+      password: cef_password
+      schema: graph
+
+  # Vector Store Configuration
+  vector:
+    dimension: 1536  # OpenAI ada-002 dimension
+    distance-metric: cosine  # Options: cosine, l2, inner_product
+
+  # Graph Configuration
+  graph:
+    in-memory: true
+    load-on-startup: true
+    max-traversal-depth: 5
+
+  # LLM Configuration
+  llm:
+    default-provider: ollama  # Options: openai, ollama, vllm
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: gpt-4o-mini
+      base-url: https://api.openai.com
+    ollama:
+      base-url: http://localhost:11434
+      model: llama3.2:3b
+    vllm:
+      base-url: ${VLLM_BASE_URL:http://localhost:8000}
+      model: ${VLLM_MODEL:}
+
+  # Embedding Configuration (batch-size for CEF framework)
+  embedding:
+    batch-size: 100
+
+  # DataSource Configuration
+  datasources:
+    filesystem:
+      enabled: true
+      base-path: ./data/seed
+    blob-storage:
+      enabled: false
+      type: s3  # Options: s3, minio
+      endpoint: http://localhost:9000
+      bucket: medical-documents
+      access-key: minioadmin
+      secret-key: minioadmin
+      region: us-east-1
+
+  # Parser Configuration
+  parser:
+    enabled-formats:
+      - pdf
+      - yaml
+      - csv
+      - json
+    pdf:
+      extract-images: false
+    max-file-size: 50MB
+
+  # Indexing Configuration
+  indexing:
+    batch-size: 100
+    chunk-size: 512
+    chunk-overlap: 50
+    auto-embed: true
+
+  # Retrieval Configuration
+  retrieval:
+    default-strategy: hybrid  # Options: hybrid, vector, bm25
+    hybrid:
+      vector-weight: 0.7
+      bm25-weight: 0.3
+    top-k: 10
+    min-score: 0.5
+    fallback-threshold: 3
+
+  # Context Provider Configuration
+  context:
+    token-budget: 4000
+    max-queries: 5
+    deduplicate: true
+
+# Spring Configuration
+spring:
+  application:
+    name: cef-framework
+
+  # Spring AI Configuration
+  ai:
+    # Ollama (default for local development)
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        options:
+          model: nomic-embed-text:latest
+    
+    # OpenAI (uncomment to use)
+#    openai:
+#      api-key: ${OPENAI_API_KEY:}
+#      embedding:
+#        options:
+#          model: text-embedding-ada-002
+#          dimensions: 1536
+
+  # R2DBC Configuration (Reactive Database)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      initial-size: 5
+      max-size: 20
+
+# Logging
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.ai: INFO
+    org.springframework.r2dbc: INFO
+

@@ -1,0 +1,82 @@
+# CEF Medical Example Configuration
+# Author: mrmanna
+# Organization: DDSE
+
+spring:
+  application:
+    name: cef-medical-example
+
+  # Server Configuration
+  server:
+    port: 8080
+
+  # Override framework defaults
+  r2dbc:
+    url: r2dbc:duckdb:./data/medical-cef.duckdb
+
+# CEF Configuration Overrides
+cef:
+  database:
+    type: duckdb
+    duckdb:
+      path: ./data/medical-cef.duckdb
+
+  datasources:
+    filesystem:
+      enabled: true
+      base-path: ./data/seed/prescriptions
+
+  llm:
+    default-provider: ollama
+
+  embedding:
+    provider: ollama
+
+# Medical Domain Configuration
+medical:
+  # Root Nodes
+  root-nodes:
+    - label: MedicalEntity
+      description: Root of medical ontology
+    - label: ClinicalProcess
+      description: Root of clinical processes
+
+  # Domain Relation Types
+  relation-types:
+    - name: HAS_CONDITION
+      semantics: ASSOCIATION
+      bidirectional: false
+      description: Patient has a medical condition
+    - name: TREATS
+      semantics: ASSOCIATION
+      bidirectional: true
+      description: Doctor treats patient
+    - name: PRESCRIBED_FOR
+      semantics: ASSOCIATION
+      bidirectional: false
+      description: Medication prescribed for condition
+    - name: HAS_SYMPTOM
+      semantics: ASSOCIATION
+      bidirectional: false
+      description: Condition has symptom
+    - name: PART_OF_BODY
+      semantics: HIERARCHY
+      bidirectional: false
+      description: Body part hierarchy
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    org.ddse.ml.cef.example: DEBUG
+    org.ddse.ml.cef: INFO
+

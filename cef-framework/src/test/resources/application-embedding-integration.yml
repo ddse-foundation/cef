@@ -1,0 +1,20 @@
+# Test Configuration with Real Ollama Embeddings
+# Activate with: mvn test -Pembedding-integration
+
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  embedding:
+    batch-size: 10
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.ai: DEBUG

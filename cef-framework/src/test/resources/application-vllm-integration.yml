@@ -1,0 +1,33 @@
+# Test Configuration for vLLM + Ollama Integration Tests
+# vLLM for chat (Qwen3-Coder-30B), Ollama for embeddings
+# Activate with: mvn test -Dvllm.integration=true
+
+spring:
+  ai:
+    openai:
+      base-url: http://localhost:8001
+      api-key: EMPTY
+      chat:
+        enabled: true
+        options:
+          model: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+          temperature: 0.7
+          max-tokens: 4096
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  embedding:
+    batch-size: 10
+    dimensions: 768
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.ai: DEBUG
+    org.springframework.ai.openai: TRACE
+    org.springframework.ai.ollama: DEBUG

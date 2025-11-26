@@ -1,0 +1,24 @@
+# Test Configuration for R2DBC Repository Tests
+
+spring:
+  application:
+    name: cef-framework-test
+
+  # R2DBC Test Configuration
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+
+  # Enable SQL initialization for tests
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+# Logging for tests
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.r2dbc: DEBUG
+    org.springframework.boot.sql.init: DEBUG
