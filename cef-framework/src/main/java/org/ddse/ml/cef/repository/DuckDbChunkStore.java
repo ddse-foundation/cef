@@ -61,14 +61,14 @@ public class DuckDbChunkStore implements ChunkStore {
             // Create table if not exists
             String createChunksSql = String.format(
                     """
-                            CREATE TABLE IF NOT EXISTS chunks (
-                                id UUID PRIMARY KEY,
-                                content TEXT,
-                                embedding FLOAT[%d],
-                                metadata JSON,
-                                linked_node_id UUID
-                            )
-                        """,
+                                CREATE TABLE IF NOT EXISTS chunks (
+                                    id UUID PRIMARY KEY,
+                                    content TEXT,
+                                    embedding FLOAT[%d],
+                                    metadata JSON,
+                                    linked_node_id UUID
+                                )
+                            """,
                     embeddingDimension);
             jdbcTemplate.execute(createChunksSql);
 
@@ -132,12 +132,12 @@ public class DuckDbChunkStore implements ChunkStore {
 
             String sql = String.format(
                     """
-                            SELECT *, array_cosine_similarity(embedding, cast(? as FLOAT[%d])) AS similarity
-                            FROM chunks
-                            WHERE embedding IS NOT NULL
-                            ORDER BY similarity DESC
-                            LIMIT ?
-                        """,
+                                SELECT *, array_cosine_similarity(embedding, cast(? as FLOAT[%d])) AS similarity
+                                FROM chunks
+                                WHERE embedding IS NOT NULL
+                                ORDER BY similarity DESC
+                                LIMIT ?
+                            """,
                     embeddingDimension);
 
             // We need to pass the vector as a SQL array string or rely on PreparedStatement
@@ -156,13 +156,13 @@ public class DuckDbChunkStore implements ChunkStore {
         return Flux.defer(() -> {
             String sql = String.format(
                     """
-                            SELECT c.*, array_cosine_similarity(c.embedding, cast(? as FLOAT[%d])) AS similarity
-                            FROM chunks c
-                            JOIN nodes n ON c.linked_node_id = n.id
-                            WHERE n.label = ? AND c.embedding IS NOT NULL
-                            ORDER BY similarity DESC
-                            LIMIT ?
-                        """,
+                                SELECT c.*, array_cosine_similarity(c.embedding, cast(? as FLOAT[%d])) AS similarity
+                                FROM chunks c
+                                JOIN nodes n ON c.linked_node_id = n.id
+                                WHERE n.label = ? AND c.embedding IS NOT NULL
+                                ORDER BY similarity DESC
+                                LIMIT ?
+                            """,
                     embeddingDimension);
 
             String queryVectorString = toEmbeddingString(queryVector);
