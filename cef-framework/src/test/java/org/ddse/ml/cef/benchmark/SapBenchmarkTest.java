@@ -1,8 +1,10 @@
 package org.ddse.ml.cef.benchmark;
 
+import org.ddse.ml.cef.parser.impl.CsvParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,6 +14,9 @@ import java.io.PrintWriter;
 class SapBenchmarkTest extends BenchmarkBase {
 
     private static final String REPORT_FILE = "SAP_BENCHMARK_REPORT.md";
+
+    @Autowired
+    private CsvParser csvParser;
 
     @BeforeEach
     void setup() throws IOException {

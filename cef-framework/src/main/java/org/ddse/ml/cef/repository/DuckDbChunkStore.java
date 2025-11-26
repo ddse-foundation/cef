@@ -2,6 +2,7 @@ package org.ddse.ml.cef.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ddse.ml.cef.config.CefProperties;
 import org.ddse.ml.cef.domain.Chunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +32,22 @@ public class DuckDbChunkStore implements ChunkStore {
     private static final Logger log = LoggerFactory.getLogger(DuckDbChunkStore.class);
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final int embeddingDimension;
 
-    public DuckDbChunkStore(JdbcTemplate jdbcTemplate) {
+    public DuckDbChunkStore(JdbcTemplate jdbcTemplate, CefProperties cefProperties) {
         this.jdbcTemplate = jdbcTemplate;
+        int configuredDimension = cefProperties != null
+                ? cefProperties.getVector().getDimension()
+                : 768;
+        this.embeddingDimension = configuredDimension > 0 ? configuredDimension : 768;
+        // Log database URL to confirm which DB file we're using
+        try {
+            String url = jdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
+            log.info("DuckDbChunkStore initialized with database URL: {}", url);
+        } catch (Exception e) {
+            log.warn("Could not retrieve database URL: {}", e.getMessage());
+        }
+        log.info("Using embedding vector dimension: {}", this.embeddingDimension);
         initializeSchema();
     }
 
@@ -45,15 +59,18 @@ public class DuckDbChunkStore implements ChunkStore {
             jdbcTemplate.execute("INSTALL json; LOAD json;");
 
             // Create table if not exists
-            jdbcTemplate.execute("""
-                        CREATE TABLE IF NOT EXISTS chunks (
-                            id UUID PRIMARY KEY,
-                            content TEXT,
-                            embedding FLOAT[768],
-                            metadata JSON,
-                            linked_node_id UUID
-                        )
-                    """);
+            String createChunksSql = String.format(
+                    """
+                            CREATE TABLE IF NOT EXISTS chunks (
+                                id UUID PRIMARY KEY,
+                                content TEXT,
+                                embedding FLOAT[%d],
+                                metadata JSON,
+                                linked_node_id UUID
+                            )
+                        """,
+                    embeddingDimension);
+            jdbcTemplate.execute(createChunksSql);
 
             // Create macro for cosine similarity if not exists (for older DuckDB versions
             // or if vss not loaded)
@@ -71,7 +88,7 @@ public class DuckDbChunkStore implements ChunkStore {
                 chunk.setId(UUID.randomUUID());
             }
 
-            String sql = "INSERT INTO chunks (id, content, embedding, metadata, linked_node_id) VALUES (?, ?, ?::FLOAT[], ?::JSON, ?)";
+            String sql = "INSERT OR REPLACE INTO chunks (id, content, embedding, metadata, linked_node_id) VALUES (?, ?, ?::FLOAT[], ?::JSON, ?)";
 
             // Convert embedding to String representation for DuckDB
             // "[1.0, 2.0, 3.0]"
@@ -86,12 +103,15 @@ public class DuckDbChunkStore implements ChunkStore {
                 }
             }
 
+            // Convert UUIDs to strings explicitly for DuckDB
             jdbcTemplate.update(sql,
-                    chunk.getId(),
+                    chunk.getId().toString(),
                     chunk.getContent(),
                     embeddingString,
                     metadataJson,
-                    chunk.getLinkedNodeId());
+                    chunk.getLinkedNodeId().toString());
+            chunk.setNew(false);
+            log.debug("Saved chunk with id={}, linkedNodeId={}", chunk.getId(), chunk.getLinkedNodeId());
             return chunk;
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -99,13 +119,26 @@ public class DuckDbChunkStore implements ChunkStore {
     @Override
     public Flux<Chunk> findTopKSimilar(float[] queryVector, int topK) {
         return Flux.defer(() -> {
-            String sql = """
-                        SELECT *, array_cosine_similarity(embedding, cast(? as FLOAT[768])) AS similarity
-                        FROM chunks
-                        WHERE embedding IS NOT NULL
-                        ORDER BY similarity DESC
-                        LIMIT ?
-                    """;
+            // Log what chunks exist before searching
+            String countSql = "SELECT COUNT(*) FROM chunks";
+            Long totalChunks = jdbcTemplate.queryForObject(countSql, Long.class);
+            log.info("findTopKSimilar: Total chunks in DB: {}", totalChunks);
+
+            if (totalChunks != null && totalChunks > 0) {
+                String sampleSql = "SELECT id, linked_node_id FROM chunks LIMIT 3";
+                List<Map<String, Object>> sampleChunks = jdbcTemplate.queryForList(sampleSql);
+                log.info("Sample chunks in DB: {}", sampleChunks);
+            }
+
+            String sql = String.format(
+                    """
+                            SELECT *, array_cosine_similarity(embedding, cast(? as FLOAT[%d])) AS similarity
+                            FROM chunks
+                            WHERE embedding IS NOT NULL
+                            ORDER BY similarity DESC
+                            LIMIT ?
+                        """,
+                    embeddingDimension);
 
             // We need to pass the vector as a SQL array string or rely on PreparedStatement
             // DuckDB JDBC might require explicit casting or string formatting for arrays in
@@ -121,14 +154,16 @@ public class DuckDbChunkStore implements ChunkStore {
     @Override
     public Flux<Chunk> findTopKSimilarWithNodeLabel(float[] queryVector, String nodeLabel, int topK) {
         return Flux.defer(() -> {
-            String sql = """
-                        SELECT c.*, array_cosine_similarity(c.embedding, cast(? as FLOAT[768])) AS similarity
-                        FROM chunks c
-                        JOIN nodes n ON c.linked_node_id = n.id
-                        WHERE n.label = ? AND c.embedding IS NOT NULL
-                        ORDER BY similarity DESC
-                        LIMIT ?
-                    """;
+            String sql = String.format(
+                    """
+                            SELECT c.*, array_cosine_similarity(c.embedding, cast(? as FLOAT[%d])) AS similarity
+                            FROM chunks c
+                            JOIN nodes n ON c.linked_node_id = n.id
+                            WHERE n.label = ? AND c.embedding IS NOT NULL
+                            ORDER BY similarity DESC
+                            LIMIT ?
+                        """,
+                    embeddingDimension);
 
             String queryVectorString = toEmbeddingString(queryVector);
             List<Chunk> chunks = jdbcTemplate.query(sql, new ChunkRowMapper(), queryVectorString, nodeLabel, topK);
@@ -140,7 +175,7 @@ public class DuckDbChunkStore implements ChunkStore {
     public Flux<Chunk> findByLinkedNodeId(UUID linkedNodeId) {
         return Flux.defer(() -> {
             String sql = "SELECT * FROM chunks WHERE linked_node_id = ?";
-            List<Chunk> chunks = jdbcTemplate.query(sql, new ChunkRowMapper(), linkedNodeId);
+            List<Chunk> chunks = jdbcTemplate.query(sql, new ChunkRowMapper(), linkedNodeId.toString());
             return Flux.fromIterable(chunks);
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -149,7 +184,7 @@ public class DuckDbChunkStore implements ChunkStore {
     public Mono<Long> countByLinkedNodeId(UUID nodeId) {
         return Mono.fromCallable(() -> {
             String sql = "SELECT COUNT(*) FROM chunks WHERE linked_node_id = ?";
-            return jdbcTemplate.queryForObject(sql, Long.class, nodeId);
+            return jdbcTemplate.queryForObject(sql, Long.class, nodeId.toString());
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -163,8 +198,10 @@ public class DuckDbChunkStore implements ChunkStore {
 
     @Override
     public Mono<Void> deleteAll() {
-        return Mono.fromRunnable(() -> {
-            jdbcTemplate.update("DELETE FROM chunks");
+        return Mono.fromCallable(() -> {
+            int rows = jdbcTemplate.update("DELETE FROM chunks");
+            log.info("Deleted {} rows from chunks table", rows);
+            return null;
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 

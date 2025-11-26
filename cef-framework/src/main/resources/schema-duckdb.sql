@@ -38,11 +38,10 @@ CREATE TABLE IF NOT EXISTS relation_types (
     directed BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Create chunks table (for vector search)
 CREATE TABLE IF NOT EXISTS chunks (
     id UUID PRIMARY KEY,
     content TEXT NOT NULL,
-    embedding FLOAT[1536],  -- OpenAI ada-002 dimension
+    embedding FLOAT[768],  -- Matches nomic-embed-text embeddings
     linked_node_id UUID,
     metadata JSON,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

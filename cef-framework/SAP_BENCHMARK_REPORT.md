@@ -1,66 +1,94 @@
 # SAP Knowledge Model Benchmark
+
 **Domain:** Enterprise ERP (Financial & Supply Chain)
-**Date:** Wed Nov 26 01:24:00 BDT 2025
+
+**Date:** 2025-11-26T18:14:15.551913090Z
 
 This report demonstrates the Knowledge Model's ability to parse raw SAP table dumps (CSV) and answer complex, temporal queries that Vector Search cannot handle.
 
-## 1. Financial GL Analyzer: Shadow IT Detection
-**User Query:** "Analyze the 'Software Subscription' spend trend for the Engineering department over the last 4 quarters. Flag any vendors with increasing costs that do not have a corresponding budget entry."
+---
 
-### Vector Only
-**Start Time:** Wed Nov 26 01:24:00 BDT 2025
-**Execution Time:** 161 ms
-```text
-# Context Retrieval Result
+## Scenario 1: Shadow IT Detection
 
-**Strategy:** VECTOR_ONLY
-**Results:** 0 chunks
+**Objective:** Analyze the 'Software Subscription' spend trend for the Engineering department over the last 4 quarters. Flag any vendors with increasing costs that do not have a corresponding budget entry.
 
-## Vector Context
+**Query:** "Analyze spend trend for Engineering department and flag suspicious vendors"
 
+### Results Comparison
+
+| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
+|--------|------------------------|----------------------------|-------------|
+| **Latency** | 25ms | 48ms | ↑92.0% |
+| **Chunks Retrieved** | 5 | 5 | - |
+| **Nodes Retrieved** | 0 | 0 | +0 |
+| **Edges Traversed** | 0 | 0 | +0 |
+| **Structural Coverage** | ✗ | ✗ | Same |
+
+### Analysis
+
+**Context Sample (Vector-Only):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10109
+**Provider ID:** DOC-106
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Congestive Heart Failure. Reports fatigue, dyspnea...
 ```
 
-### Knowledge Model
-**Start Time:** Wed Nov 26 01:24:10 BDT 2025
-**Execution Time:** 868 ms
-```text
-# Context Retrieval Result
+**Context Sample (Knowledge Model):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10109
+**Provider ID:** DOC-106
+**Date:** 2025-11-26
 
-**Strategy:** GRAPH_ONLY
-**Retrieval Time:** 866ms
-**Results:** 0 nodes, 0 edges, 0 chunks
-
-*No context found for the given query.*
-
+**SUBJECTIVE:**
+Patient presents for follow-up of Congestive Heart Failure. Reports fatigue, dyspnea...
 ```
 
-## 2. Supply Chain: Butterfly Effect Analysis
-**User Query:** "A Typhoon has hit Taiwan for 3 days. Visualize the impact on the 'Holiday Laptop' delivery schedule."
+---
 
-### Vector Only
-**Start Time:** Wed Nov 26 01:24:11 BDT 2025
-**Execution Time:** 28 ms
-```text
-# Context Retrieval Result
+## Scenario 2: Typhoon Impact on Holiday Laptop Delivery
 
-**Strategy:** VECTOR_ONLY
-**Results:** 0 chunks
+**Objective:** A Typhoon has hit Taiwan for 3 days. Visualize the impact on the 'Holiday Laptop' delivery schedule.
 
-## Vector Context
+**Query:** "Impact of Typhoon in Taiwan on Holiday Laptop delivery"
 
+### Results Comparison
+
+| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
+|--------|------------------------|----------------------------|-------------|
+| **Latency** | 22ms | 42ms | ↑90.9% |
+| **Chunks Retrieved** | 5 | 5 | - |
+| **Nodes Retrieved** | 0 | 0 | +0 |
+| **Edges Traversed** | 0 | 0 | +0 |
+| **Structural Coverage** | ✗ | ✗ | Same |
+
+### Analysis
+
+**Context Sample (Vector-Only):**
+```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10030
+**Provider ID:** DOC-106
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Essential Hypertension. Reports nosebleeds, shortn...
 ```
 
-### Knowledge Model
-**Start Time:** Wed Nov 26 01:24:19 BDT 2025
-**Execution Time:** 14 ms
-```text
-# Context Retrieval Result
-
-**Strategy:** GRAPH_ONLY
-**Retrieval Time:** 14ms
-**Results:** 0 nodes, 0 edges, 0 chunks
-
-*No context found for the given query.*
-
+**Context Sample (Knowledge Model):**
 ```
+**CLINICAL ENCOUNTER NOTE**
+**Patient ID:** PT-10030
+**Provider ID:** DOC-106
+**Date:** 2025-11-26
+
+**SUBJECTIVE:**
+Patient presents for follow-up of Essential Hypertension. Reports nosebleeds, shortn...
+```
+
+---
 

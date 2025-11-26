@@ -16,6 +16,9 @@ spring:
           model: nomic-embed-text:latest
 
 cef:
+  vector:
+    store: duckdb
+    dimension: 768
   embedding:
     batch-size: 10
     dimensions: 768

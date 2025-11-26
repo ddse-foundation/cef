@@ -23,7 +23,6 @@
 
     <modules>
         <module>cef-framework</module>
-        <module>cef-example</module>
     </modules>
 
     <properties>

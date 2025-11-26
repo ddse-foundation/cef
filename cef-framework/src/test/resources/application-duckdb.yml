@@ -3,7 +3,7 @@ spring:
     init:
       mode: never  # Schema initialized by DataSourceInitializer bean in DuckDBTestConfiguration
   datasource:
-    url: "jdbc:duckdb:"
+    url: "jdbc:duckdb:./target/test-duckdb.db"
     driver-class-name: org.duckdb.DuckDBDriver
   ai:
     ollama:
@@ -16,6 +16,7 @@ spring:
 cef:
   vector:
     store: duckdb
+    dimension: 768
   database:
     type: duckdb
   embedding:

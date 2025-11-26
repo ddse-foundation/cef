@@ -96,7 +96,7 @@ public class CefProperties {
 
     public static class VectorConfig {
         private String store = "postgres";
-        private int dimension = 1536;
+        private int dimension = 768;
 
         public String getStore() {
             return store;

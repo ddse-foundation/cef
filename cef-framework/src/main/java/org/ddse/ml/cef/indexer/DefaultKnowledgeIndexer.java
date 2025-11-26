@@ -192,7 +192,7 @@ public class DefaultKnowledgeIndexer implements KnowledgeIndexer {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(chunkStore::save)
                 .thenReturn(node)
-                .doOnSuccess(n -> log.debug("Generated embedding for node: {}", n.getId()))
+                // .doOnSuccess(n -> log.debug("Generated embedding for node: {}", n.getId()))
                 .onErrorResume(e -> {
                     log.error("Failed to generate embedding for node: {}", node.getId(), e);
                     return Mono.just(node); // Continue without embedding
@@ -214,7 +214,7 @@ public class DefaultKnowledgeIndexer implements KnowledgeIndexer {
             return chunk;
         })
                 .subscribeOn(Schedulers.boundedElastic())
-                .doOnSuccess(c -> log.debug("Generated embedding for chunk: {}", c.getId()))
+                // .doOnSuccess(c -> log.debug("Generated embedding for chunk: {}", c.getId()))
                 .onErrorResume(e -> {
                     log.error("Failed to generate embedding for chunk: {}", chunk.getId(), e);
                     return Mono.just(chunk); // Continue without embedding

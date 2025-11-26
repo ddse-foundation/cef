@@ -64,7 +64,7 @@ public class DuckDbGraphStore implements GraphStore {
                 .doOnNext(savedNode -> {
                     // Update in-memory graph synchronously
                     inMemoryGraph.addNode(savedNode);
-                    log.debug("Node {} added to both DB and in-memory graph", savedNode.getId());
+                    // log.debug("Node {} added to both DB and in-memory graph", savedNode.getId());
                 });
     }
 
@@ -85,7 +85,7 @@ public class DuckDbGraphStore implements GraphStore {
                 .doOnNext(savedEdge -> {
                     // Update in-memory graph synchronously
                     inMemoryGraph.addEdge(savedEdge);
-                    log.debug("Edge {} added to both DB and in-memory graph", savedEdge.getId());
+                    // log.debug("Edge {} added to both DB and in-memory graph", savedEdge.getId());
                 });
     }
 

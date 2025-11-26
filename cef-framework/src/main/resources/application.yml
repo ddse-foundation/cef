@@ -20,7 +20,7 @@ cef:
 
   # Vector Store Configuration
   vector:
-    dimension: 1536  # OpenAI ada-002 dimension
+    dimension: 768  # Nomic embed-text default dimension
     distance-metric: cosine  # Options: cosine, l2, inner_product
 
   # Graph Configuration
@@ -115,7 +115,7 @@ spring:
 #      embedding:
 #        options:
 #          model: text-embedding-ada-002
-#          dimensions: 1536
+#          dimensions: 768
 
   # R2DBC Configuration (Reactive Database)
   r2dbc:

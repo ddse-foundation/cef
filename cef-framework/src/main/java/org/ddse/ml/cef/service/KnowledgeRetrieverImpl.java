@@ -62,33 +62,36 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
 
         log.debug("Retrieving context for request: {}", request);
 
-        if (request.graphQuery() != null && request.graphQuery().targets() != null
-                && !request.graphQuery().targets().isEmpty()) {
-            // New Vector-First Strategy
-            log.debug("Using Vector-First Strategy with GraphQuery");
+        List<String> semanticKeywords = request.semanticKeywords() != null ? request.semanticKeywords() : List.of();
+
+        if (hasGraphTargets(request)) {
+            // Vector-first resolution of targets, then hybrid retrieval
+            log.debug("Using hybrid strategy with GraphQuery targets");
             return resolveEntryPoints(request.graphQuery(), request.topK())
                     .flatMap(startNodeIds -> {
                         if (startNodeIds.isEmpty()) {
-                            log.warn("No entry points resolved from GraphQuery. Fallback to vector search.");
-                            return retrieveFromVectorStore(
-                                    new VectorRetrievalRequest(request.query(), request.topK()));
+                            log.warn("No entry points resolved from GraphQuery. Falling back to vector-only.");
+                            return vectorOnly(request.query(), semanticKeywords, request.topK())
+                                    .doOnSuccess(result -> result
+                                            .setRetrievalTimeMs(System.currentTimeMillis() - startTime));
                         }
-                        log.debug("Resolved {} entry points. Extracting subgraph.", startNodeIds.size());
+
                         int depth = request.graphQuery().traversal() != null
                                 ? request.graphQuery().traversal().maxDepth()
                                 : 2;
+
                         return graphStore.extractSubgraph(startNodeIds, depth)
                                 .map(subgraph -> enforceNodeLimit(subgraph, request.maxGraphNodes(), startNodeIds))
-                                .map(subgraph -> new RetrievalResult(subgraph.getNodes(), subgraph.getEdges(),
-                                        List.of(), RetrievalResult.RetrievalStrategy.GRAPH_ONLY));
-                    })
-                    .doOnSuccess(result -> result.setRetrievalTimeMs(System.currentTimeMillis() - startTime));
-        } else {
-            // Fallback to simple vector search if no graph query
-            log.debug("No GraphQuery provided. Using Vector-Only Strategy.");
-            return retrieveFromVectorStore(new VectorRetrievalRequest(request.query(), request.topK()))
-                    .doOnSuccess(result -> result.setRetrievalTimeMs(System.currentTimeMillis() - startTime));
+                                .flatMap(subgraph -> hybridRetrieve(subgraph, request.query(), semanticKeywords,
+                                        request.topK()))
+                                .doOnSuccess(result -> result
+                                        .setRetrievalTimeMs(System.currentTimeMillis() - startTime));
+                    });
         }
+
+        // No graph query provided – pure vector path with optional semantic keywords
+        return vectorOnly(request.query(), semanticKeywords, request.topK())
+                .doOnSuccess(result -> result.setRetrievalTimeMs(System.currentTimeMillis() - startTime));
     }
 
     @Override
@@ -150,9 +153,15 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
     }
 
     private Mono<RetrievalResult> retrieveFromVectorStore(VectorRetrievalRequest request) {
+        return retrieveFromVectorStore(request, List.of());
+    }
+
+    private Mono<RetrievalResult> retrieveFromVectorStore(VectorRetrievalRequest request, List<String> extraKeywords) {
         log.debug("Vector-only retrieval: query={}, topK={}", request.getQuery(), request.getTopK());
 
-        return generateQueryEmbedding(request.getQuery())
+        String enhancedQuery = buildEnhancedQuery(request.getQuery(), extraKeywords);
+
+        return generateQueryEmbedding(enhancedQuery)
                 .flatMap(embedding -> findSimilarChunks(embedding, request.getTopK()))
                 .map(chunks -> new RetrievalResult(
                         List.of(),
@@ -163,6 +172,12 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
 
     /**
      * Resolve entry points (UUIDs) from GraphQuery targets using vector search.
+     * Implements ADR-002 Vector-First Resolution:
+     * 1. Embed target description for semantic matching
+     * 2. Find similar chunks via vector search
+     * 3. Get linked node IDs from chunks
+     * 4. Filter nodes by typeHint (label) to prevent context explosion
+     * 5. Return only relevant entry point node UUIDs
      */
     private Mono<List<UUID>> resolveEntryPoints(GraphQuery graphQuery, int topK) {
         return Flux.fromIterable(graphQuery.targets())
@@ -171,15 +186,55 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
                     if (queryText == null || queryText.isEmpty()) {
                         return Mono.empty();
                     }
+
+                    String typeHint = target.typeHint();
+
                     return generateQueryEmbedding(queryText)
                             .flatMapMany(embedding -> chunkStore.findTopKSimilar(embedding, topK))
+                            .doOnNext(chunk -> log.debug("Found chunk: id={}, linkedNodeId={}, content preview={}",
+                                    chunk.getId(), chunk.getLinkedNodeId(),
+                                    chunk.getContent() != null && chunk.getContent().length() > 50
+                                            ? chunk.getContent().substring(0, 50) + "..."
+                                            : chunk.getContent()))
                             .filter(chunk -> chunk.getLinkedNodeId() != null)
                             .map(Chunk::getLinkedNodeId)
+                            .distinct()
+                            .flatMap(nodeId -> {
+                                // Filter by typeHint if provided
+                                if (typeHint == null || typeHint.isEmpty()) {
+                                    log.debug("No typeHint filter, accepting node: {}", nodeId);
+                                    return Mono.just(nodeId);
+                                }
+
+                                // Look up node and check if label matches typeHint
+                                return graphStore.getNode(nodeId)
+                                        .doOnNext(node -> log.debug(
+                                                "Found node: id={}, label='{}', typeHint='{}', match={}",
+                                                node.getId(), node.getLabel(), typeHint,
+                                                typeHint.equals(node.getLabel())))
+                                        .switchIfEmpty(Mono.defer(() -> {
+                                            log.warn("Node {} not found in graph store!", nodeId);
+                                            return Mono.empty();
+                                        }))
+                                        .filter(node -> typeHint.equals(node.getLabel()))
+                                        .map(Node::getId)
+                                        .switchIfEmpty(Mono.defer(() -> {
+                                            log.debug("Node {} filtered out (label mismatch with typeHint={})", nodeId,
+                                                    typeHint);
+                                            return Mono.empty();
+                                        }));
+                            })
                             .collectList();
                 })
                 .flatMapIterable(list -> list)
                 .distinct()
-                .collectList();
+                .collectList()
+                .doOnSuccess(nodeIds -> {
+                    if (nodeIds != null && !nodeIds.isEmpty()) {
+                        log.debug("Resolved {} entry points from {} targets",
+                                nodeIds.size(), graphQuery.targets().size());
+                    }
+                });
     }
 
     /**
@@ -268,5 +323,120 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
                 .collect(Collectors.toList());
 
         return new GraphSubgraph(truncatedNodes, truncatedEdges);
+    }
+
+    private Mono<RetrievalResult> hybridRetrieve(GraphSubgraph subgraph, String baseQuery,
+            List<String> semanticKeywords, int topK) {
+        Set<UUID> contextNodeIds = subgraph.getNodes().stream()
+                .map(Node::getId)
+                .collect(Collectors.toSet());
+
+        List<String> graphKeywords = extractKeywordsFromGraph(subgraph.getNodes(), subgraph.getEdges());
+        List<String> mergedKeywords = new ArrayList<>();
+        mergedKeywords.addAll(semanticKeywords);
+        mergedKeywords.addAll(graphKeywords);
+
+        String enhancedQuery = buildEnhancedQuery(baseQuery, mergedKeywords);
+
+        int oversample = Math.max(topK * 2, topK + 5);
+        return generateQueryEmbedding(enhancedQuery)
+                .flatMap(embedding -> findSimilarChunks(embedding, oversample))
+                .map(chunks -> {
+                    List<Chunk> prioritized = prioritizeChunks(chunks, contextNodeIds, topK);
+                    boolean usedGraph = prioritized.stream()
+                            .anyMatch(chunk -> chunk.getLinkedNodeId() != null
+                                    && contextNodeIds.contains(chunk.getLinkedNodeId()));
+                    RetrievalResult.RetrievalStrategy strategy = usedGraph
+                            ? RetrievalResult.RetrievalStrategy.HYBRID
+                            : RetrievalResult.RetrievalStrategy.VECTOR_ONLY;
+
+                    return new RetrievalResult(subgraph.getNodes(), subgraph.getEdges(), prioritized, strategy);
+                });
+    }
+
+    private List<Chunk> prioritizeChunks(List<Chunk> chunks, Set<UUID> contextNodeIds, int topK) {
+        if (chunks == null || chunks.isEmpty()) {
+            return List.of();
+        }
+        if (contextNodeIds == null || contextNodeIds.isEmpty()) {
+            return chunks.stream().limit(topK).toList();
+        }
+
+        List<Chunk> inContext = new ArrayList<>();
+        List<Chunk> outOfContext = new ArrayList<>();
+
+        for (Chunk chunk : chunks) {
+            UUID linked = chunk.getLinkedNodeId();
+            if (linked != null && contextNodeIds.contains(linked)) {
+                inContext.add(chunk);
+            } else {
+                outOfContext.add(chunk);
+            }
+        }
+
+        List<Chunk> merged = new ArrayList<>();
+        merged.addAll(inContext);
+        merged.addAll(outOfContext);
+
+        return merged.stream().limit(topK).toList();
+    }
+
+    private boolean hasGraphTargets(RetrievalRequest request) {
+        return request.graphQuery() != null
+                && request.graphQuery().targets() != null
+                && !request.graphQuery().targets().isEmpty();
+    }
+
+    private String buildEnhancedQuery(String baseQuery, List<String> keywords) {
+        if (baseQuery == null) {
+            baseQuery = "";
+        }
+        if (keywords == null || keywords.isEmpty()) {
+            return baseQuery;
+        }
+
+        String keywordString = keywords.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .limit(10)
+                .collect(Collectors.joining(" "));
+
+        if (keywordString.isEmpty()) {
+            return baseQuery;
+        }
+        return (baseQuery + " " + keywordString).trim();
+    }
+
+    private List<String> extractKeywordsFromGraph(List<Node> nodes, List<Edge> edges) {
+        Set<String> keywords = new HashSet<>();
+
+        for (Node node : nodes) {
+            keywords.add(node.getLabel());
+            if (node.getProperties() != null) {
+                for (Object value : node.getProperties().values()) {
+                    if (value == null) {
+                        continue;
+                    }
+                    String str = String.valueOf(value).trim();
+                    if (str.length() > 2 && !str.matches("^[0-9a-fA-F-]{36}$")) {
+                        keywords.add(str);
+                    }
+                }
+            }
+        }
+
+        for (Edge edge : edges) {
+            if (edge.getRelationType() != null) {
+                keywords.add(edge.getRelationType());
+            }
+        }
+
+        return new ArrayList<>(keywords);
+    }
+
+    private Mono<RetrievalResult> vectorOnly(String query, List<String> semanticKeywords, int topK) {
+        return retrieveFromVectorStore(new VectorRetrievalRequest(query, topK), semanticKeywords);
     }
 }

@@ -69,7 +69,7 @@ public class InMemoryKnowledgeGraph {
                     .add(nodeId);
         }
 
-        log.debug("Added node: id={}, label={}", nodeId, node.getLabel());
+        // log.debug("Added node: id={}, label={}", nodeId, node.getLabel());
     }
 
     /**
@@ -155,8 +155,8 @@ public class InMemoryKnowledgeGraph {
         // Add to edge index
         edgeIndex.put(edge.getId(), edge);
 
-        log.debug("Added edge: id={}, type={}, source={}, target={}",
-                edge.getId(), edge.getRelationType(), sourceId, targetId);
+        // log.debug("Added edge: id={}, type={}, source={}, target={}",
+        // edge.getId(), edge.getRelationType(), sourceId, targetId);
     }
 
     /**

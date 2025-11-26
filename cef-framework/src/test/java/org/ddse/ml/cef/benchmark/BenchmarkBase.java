@@ -1,205 +1,308 @@
 package org.ddse.ml.cef.benchmark;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ddse.ml.cef.DuckDBTestConfiguration;
-import org.ddse.ml.cef.config.CefProperties;
 import org.ddse.ml.cef.config.VllmTestConfiguration;
-import org.ddse.ml.cef.domain.Chunk;
+import org.ddse.ml.cef.base.MedicalDataTestBase;
+import org.ddse.ml.cef.api.KnowledgeRetriever;
 import org.ddse.ml.cef.indexer.DefaultKnowledgeIndexer;
 import org.ddse.ml.cef.indexer.KnowledgeIndexer;
-import org.ddse.ml.cef.mcp.McpContextTool;
-import org.ddse.ml.cef.parser.impl.CsvParser;
 import org.ddse.ml.cef.repository.ChunkRepository;
 import org.ddse.ml.cef.repository.ChunkStore;
 import org.ddse.ml.cef.repository.EdgeRepository;
 import org.ddse.ml.cef.repository.NodeRepository;
+import org.ddse.ml.cef.storage.GraphStore;
 import org.ddse.ml.cef.dto.GraphQuery;
 import org.ddse.ml.cef.dto.ResolutionTarget;
 import org.ddse.ml.cef.dto.RetrievalRequest;
 import org.ddse.ml.cef.dto.TraversalHint;
-import org.ddse.ml.cef.storage.GraphStore;
-import org.ddse.ml.cef.storage.r2dbc.R2dbcGraphStore;
+import org.ddse.ml.cef.retriever.RetrievalResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.ai.model.function.FunctionCallback;
 
 import java.io.PrintWriter;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @SpringBootTest(classes = DuckDBTestConfiguration.class, properties = "spring.main.allow-bean-definition-overriding=true")
 @Import({ VllmTestConfiguration.class })
 @ActiveProfiles({ "vllm-integration", "duckdb" })
-public abstract class BenchmarkBase {
+public abstract class BenchmarkBase extends MedicalDataTestBase {
 
     protected static final Logger logger = LoggerFactory.getLogger(BenchmarkBase.class);
 
     @Autowired
-    protected McpContextTool mcpTool;
+    protected KnowledgeRetriever retriever;
 
-    @Autowired
-    protected GraphStore graphStore;
+    /**
+     * Metrics collected during benchmark execution.
+     */
+    protected static class BenchmarkMetrics {
+        String approach;
+        long latencyMs;
+        int chunksRetrieved;
+        int nodesRetrieved;
+        int edgesTraversed;
+        String contextSample;
 
-    @Autowired
-    protected ChunkStore chunkStore;
-
-    @Autowired
-    protected CsvParser csvParser;
-
-    @Autowired
-    protected EmbeddingModel embeddingModel;
-
-    @Autowired
-    protected ChatClient.Builder chatClientBuilder;
-
-    @Autowired
-    protected org.ddse.ml.cef.indexer.KnowledgeIndexer indexer;
-
-    protected ChatClient chatClient;
-
-    protected final ObjectMapper objectMapper = new ObjectMapper();
-
-    @TestConfiguration
-    static class Config {
-        // Framework auto-configuration already provides all necessary beans
-        // DuckDBTestConfiguration provides database setup
-        // Only override what's absolutely necessary for tests
-    }
-
-    @BeforeEach
-    void setupBase() {
-        this.chatClient = chatClientBuilder.build();
-        graphStore.clear().block();
-        chunkStore.deleteAll().block();
+        public BenchmarkMetrics(String approach) {
+            this.approach = approach;
+        }
     }
 
     protected void runScenario(PrintWriter writer, String title, String description, String query,
             String... graphHints) {
+        logger.info("=== Running Scenario: {} ===", title);
+
         writer.println("## " + title);
-        writer.println("**Clinical Question:** \"" + description + "\"");
+        writer.println();
+        writer.println("**Objective:** " + description);
+        writer.println();
+        writer.println("**Query:** \"" + query + "\"");
         writer.println();
 
-        // 1. Run Vector Only (Naive RAG) - Get LLM final output
-        long vectorStart = System.currentTimeMillis();
-        String vectorLLMOutput = executeLLMWithVectorOnly(description);
-        long vectorTime = System.currentTimeMillis() - vectorStart;
+        // 1. Run Vector Only (Naive RAG)
+        BenchmarkMetrics vectorMetrics = runVectorOnly(query);
+        logger.info("Vector-Only: Latency: {}ms, Chunks: {}, Nodes: {}, Edges: {}",
+                vectorMetrics.latencyMs, vectorMetrics.chunksRetrieved,
+                vectorMetrics.nodesRetrieved, vectorMetrics.edgesTraversed);
 
-        // 2. Run Knowledge Model (Graph+Vector Hybrid) - Get LLM final output
-        long kmStart = System.currentTimeMillis();
-        String kmLLMOutput = executeLLMWithKnowledgeModel(query);
-        long kmTime = System.currentTimeMillis() - kmStart;
+        // 2. Run Knowledge Model (Graph RAG)
+        BenchmarkMetrics kmMetrics = runKnowledgeModel(query, graphHints);
+        logger.info("Knowledge Model: Latency: {}ms, Chunks: {}, Nodes: {}, Edges: {}",
+                kmMetrics.latencyMs, kmMetrics.chunksRetrieved,
+                kmMetrics.nodesRetrieved, kmMetrics.edgesTraversed);
 
-        // Display side-by-side outputs
-        writer.println("### Knowledge Model Output (Graph + Vector)");
-        writer.println("**Duration:** " + kmTime + "ms");
-        writer.println();
-        writer.println(kmLLMOutput);
-        writer.println();
+        // Write comparison table
+        writeComparisonTable(writer, vectorMetrics, kmMetrics);
 
-        writer.println("### Vector-Only Output (Baseline RAG)");
-        writer.println("**Duration:** " + vectorTime + "ms");
-        writer.println();
-        writer.println(vectorLLMOutput);
-        writer.println();
+        // Write analysis
+        writeAnalysis(writer, vectorMetrics, kmMetrics);
 
         writer.println("---");
         writer.println();
     }
 
-    private String executeLLMWithVectorOnly(String query) {
-        // Pure vector search
-        float[] queryVector = embeddingModel.embed(query);
-        List<Chunk> chunks = chunkStore.findTopKSimilar(queryVector, 10).collectList().block();
+    /**
+     * Run vector-only retrieval (Naive RAG baseline).
+     */
+    private BenchmarkMetrics runVectorOnly(String query) {
+        BenchmarkMetrics metrics = new BenchmarkMetrics("Vector-Only (Naive RAG)");
 
-        // Format context for LLM
-        StringBuilder context = new StringBuilder();
-        context.append("Based on the following clinical notes, answer the question.\n\n");
-        context.append("Clinical Notes:\n");
-        if (chunks != null) {
-            for (int i = 0; i < chunks.size(); i++) {
-                context.append((i + 1)).append(". ").append(chunks.get(i).getContent()).append("\n\n");
-            }
+        // Build retrieval request without graph query
+        RetrievalRequest request = RetrievalRequest.builder()
+                .query(query)
+                .topK(5)
+                .build();
+
+        long startTime = System.currentTimeMillis();
+        RetrievalResult result = retriever.retrieve(request).block();
+        metrics.latencyMs = System.currentTimeMillis() - startTime;
+
+        if (result != null) {
+            metrics.chunksRetrieved = result.getChunks() != null ? result.getChunks().size() : 0;
+            metrics.nodesRetrieved = result.getNodes() != null ? result.getNodes().size() : 0;
+            metrics.edgesTraversed = result.getEdges() != null ? result.getEdges().size() : 0;
+            metrics.contextSample = extractContextSample(result);
         }
 
-        // Get LLM answer
-        String prompt = context + "\nQuestion: " + query + "\n\nAnswer:";
-        return chatClient.prompt(prompt).call().content();
+        return metrics;
     }
 
-    protected String executeLLMWithKnowledgeModel(String query) {
-        // Use MCP tool (Knowledge Model with graph+vector) via native tool calling
-        // The LLM will decide to call the tool, execute it, and use the result to
-        // answer.
-        logger.info("=== [Benchmark] Sending Query to LLM ===");
-        logger.info("Query: {}", query);
+    /**
+     * Run knowledge model retrieval (Graph RAG with traversal hints).
+     */
+    private BenchmarkMetrics runKnowledgeModel(String query, String[] graphHints) {
+        BenchmarkMetrics metrics = new BenchmarkMetrics("Knowledge Model (Graph RAG)");
 
-        String response = chatClient.prompt(query)
-                .functions(mcpTool)
-                .call()
-                .content();
+        // Build graph query from query text and hints
+        GraphQuery graphQuery = buildGraphQuery(query, graphHints);
 
-        logger.info("=== [Benchmark] LLM Initial Response ===");
-        logger.info("Response: {}", response);
+        // Build retrieval request with graph query
+        RetrievalRequest request = RetrievalRequest.builder()
+                .query(query)
+                .graphQuery(graphQuery)
+                .topK(5)
+                .maxGraphNodes(50)
+                .build();
 
-        return response;
-    }
+        long startTime = System.currentTimeMillis();
+        RetrievalResult result = retriever.retrieve(request).block();
+        metrics.latencyMs = System.currentTimeMillis() - startTime;
 
-    private void evaluateOutputs(PrintWriter writer, String kmOutput, String vectorOutput, String groundTruth) {
-        // Simple evaluation - count matches
-        // In production, this would use NLP/LLM-based evaluation
-        writer.println("**Note:** Evaluation metrics require manual review or automated NLP scoring.");
-        writer.println("- **Ground Truth:** " + groundTruth);
-        writer.println("- **KM Output Length:** " + kmOutput.length() + " chars");
-        writer.println("- **Vector Output Length:** " + vectorOutput.length() + " chars");
-
-        // Check if ground truth keywords appear in outputs
-        String[] keywords = groundTruth.toLowerCase().split("\\s+");
-        long kmMatches = java.util.Arrays.stream(keywords)
-                .filter(kw -> kmOutput.toLowerCase().contains(kw))
-                .count();
-        long vectorMatches = java.util.Arrays.stream(keywords)
-                .filter(kw -> vectorOutput.toLowerCase().contains(kw))
-                .count();
-
-        writer.println("- **KM Keyword Coverage:** " + kmMatches + "/" + keywords.length);
-        writer.println("- **Vector Keyword Coverage:** " + vectorMatches + "/" + keywords.length);
-    }
-
-    protected String formatVectorResult(List<Chunk> chunks) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("# Context Retrieval Result\n\n");
-        sb.append("**Strategy:** VECTOR_ONLY\n");
-        sb.append("**Results:** ").append(chunks != null ? chunks.size() : 0).append(" chunks\n\n");
-        sb.append("## Vector Context\n");
-        if (chunks != null) {
-            for (Chunk c : chunks) {
-                sb.append("- ").append(c.getContent()).append("\n");
-            }
+        if (result != null) {
+            metrics.chunksRetrieved = result.getChunks() != null ? result.getChunks().size() : 0;
+            metrics.nodesRetrieved = result.getNodes() != null ? result.getNodes().size() : 0;
+            metrics.edgesTraversed = result.getEdges() != null ? result.getEdges().size() : 0;
+            metrics.contextSample = extractContextSample(result);
         }
-        return sb.toString();
+
+        return metrics;
+    }
+
+    /**
+     * Build GraphQuery from query text and hints array.
+     * 
+     * Implements ADR-002's Vector-First Resolution strategy:
+     * - Uses query text for semantic vector search (finds relevant chunks)
+     * - Uses typeHint to filter entry nodes (prevents context explosion)
+     * - Defines traversal relationships for graph exploration
+     * 
+     * Format: [targetLabel, relationType1, relationType2, ...]
+     * 
+     * @param query      Semantic query text for vector-based entry point resolution
+     * @param graphHints Array of graph navigation hints
+     * @return GraphQuery with resolution target and traversal hints
+     */
+    private GraphQuery buildGraphQuery(String query, String[] graphHints) {
+        if (graphHints == null || graphHints.length == 0) {
+            return null;
+        }
+
+        // Use query for semantic matching, typeHint for filtering
+        // This avoids retrieving all nodes of a type (e.g., all 150 patients)
+        ResolutionTarget target = new ResolutionTarget(
+                query, // description: rich semantic query for vector search
+                graphHints.length > 0 ? graphHints[0] : null, // typeHint: entity type filter
+                null // properties
+        );
+
+        // Remaining hints are relation types for traversal
+        TraversalHint traversal = null;
+        if (graphHints.length > 1) {
+            List<String> relationTypes = Arrays.asList(Arrays.copyOfRange(graphHints, 1, graphHints.length));
+            traversal = new TraversalHint(
+                    3, // maxDepth
+                    relationTypes,
+                    null // direction (null = both)
+            );
+        }
+
+        return new GraphQuery(List.of(target), traversal);
+    }
+
+    /**
+     * Extract a sample of context for display.
+     */
+    private String extractContextSample(RetrievalResult result) {
+        if (result.getChunks() != null && !result.getChunks().isEmpty()) {
+            String content = result.getChunks().get(0).getContent();
+            return content.length() > 200 ? content.substring(0, 200) + "..." : content;
+        }
+        return "(No context retrieved)";
+    }
+
+    /**
+     * Write comparison table for metrics.
+     */
+    private void writeComparisonTable(PrintWriter writer, BenchmarkMetrics vectorMetrics,
+            BenchmarkMetrics kmMetrics) {
+        writer.println("### Results Comparison");
+        writer.println();
+        writer.println("| Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |");
+        writer.println("|--------|------------------------|----------------------------|-------------|");
+
+        // Latency
+        double latencyImprovement = calculateImprovement(vectorMetrics.latencyMs, kmMetrics.latencyMs);
+        String latencyArrow = latencyImprovement > 0 ? "↑" : "↓";
+        writer.printf("| **Latency** | %dms | %dms | %s%.1f%% |%n",
+                vectorMetrics.latencyMs, kmMetrics.latencyMs, latencyArrow, Math.abs(latencyImprovement));
+
+        // Chunks
+        writer.printf("| **Chunks Retrieved** | %d | %d | %s |%n",
+                vectorMetrics.chunksRetrieved, kmMetrics.chunksRetrieved,
+                kmMetrics.chunksRetrieved > vectorMetrics.chunksRetrieved
+                        ? "+" + (kmMetrics.chunksRetrieved - vectorMetrics.chunksRetrieved)
+                        : "-");
+
+        // Nodes
+        writer.printf("| **Nodes Retrieved** | %d | %d | +%d |%n",
+                vectorMetrics.nodesRetrieved, kmMetrics.nodesRetrieved,
+                kmMetrics.nodesRetrieved - vectorMetrics.nodesRetrieved);
+
+        // Edges
+        writer.printf("| **Edges Traversed** | %d | %d | +%d |%n",
+                vectorMetrics.edgesTraversed, kmMetrics.edgesTraversed,
+                kmMetrics.edgesTraversed - vectorMetrics.edgesTraversed);
+
+        // Structural Coverage
+        boolean vectorCoverage = vectorMetrics.nodesRetrieved > 0;
+        boolean kmCoverage = kmMetrics.nodesRetrieved > 0;
+        writer.printf("| **Structural Coverage** | %s | %s | %s |%n",
+                vectorCoverage ? "✓" : "✗",
+                kmCoverage ? "✓" : "✗",
+                kmCoverage == vectorCoverage ? "Same" : (kmCoverage ? "Better" : "Worse"));
+
+        writer.println();
+    }
+
+    /**
+     * Write analysis section.
+     */
+    private void writeAnalysis(PrintWriter writer, BenchmarkMetrics vectorMetrics,
+            BenchmarkMetrics kmMetrics) {
+        writer.println("### Analysis");
+        writer.println();
+
+        writer.println("**Context Sample (Vector-Only):**");
+        writer.println("```");
+        writer.println(vectorMetrics.contextSample);
+        writer.println("```");
+        writer.println();
+
+        writer.println("**Context Sample (Knowledge Model):**");
+        writer.println("```");
+        writer.println(kmMetrics.contextSample);
+        writer.println("```");
+        writer.println();
+    }
+
+    /**
+     * Calculate percentage improvement (negative means slower).
+     */
+    private double calculateImprovement(long baseline, long current) {
+        if (baseline == 0)
+            return 0;
+        return ((double) (current - baseline) / baseline) * 100;
     }
 
     protected void writeHeader(PrintWriter writer, String title, String domain, String description) {
         writer.println("# " + title);
+        writer.println();
         writer.println("**Domain:** " + domain);
-        writer.println("**Date:** " + new Date());
+        writer.println();
+        writer.println("**Date:** " + Instant.now());
         writer.println();
         writer.println(description);
         writer.println();
+        writer.println("---");
+        writer.println();
     }
 
+    @TestConfiguration
+    static class Config {
+
+        @Bean(name = "knowledgeIndexer")
+        KnowledgeIndexer knowledgeIndexer(
+                GraphStore graphStore,
+                @Autowired(required = false) NodeRepository nodeRepository,
+                @Autowired(required = false) EdgeRepository edgeRepository,
+                ChunkStore chunkStore,
+                EmbeddingModel embeddingModel,
+                @Autowired(required = false) ChunkRepository chunkRepository) {
+            // ChunkRepository is optional for DuckDB profile; chunkStore provides
+            // persistence.
+            return new DefaultKnowledgeIndexer(graphStore, nodeRepository, edgeRepository, chunkStore,
+                    embeddingModel);
+        }
+    }
 }
