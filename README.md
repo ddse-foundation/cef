@@ -87,7 +87,7 @@
 
 ```bash
 git clone <repository-url>
-cd ced
+cd cef
 mvn clean install
 ```
 

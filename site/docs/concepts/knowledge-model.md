@@ -402,6 +402,6 @@ RelationType("IN_CATEGORY", "Product", "Category", ...)
 
 ## Next Steps
 
-- Learn about [Indexing](indexing) to populate your knowledge model
-- Explore [Retrieval Strategies](retrieval) to query your model
-- See [Examples](../tutorials/medical-knowledge-model) for complete implementations
+- Learn about [Indexing](../intro) to populate your knowledge model
+- Explore [Retrieval Strategies](../intro) to query your model
+- See [Examples](../tutorials/build-your-first-model) for complete implementations

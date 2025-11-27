@@ -477,4 +477,4 @@ java -jar app.jar --spring.profiles.active=prod
 
 - Learn about [Knowledge Models](../concepts/knowledge-model)
 - Follow the [Quick Start Tutorial](../quickstart)
-- Explore [Advanced Configuration](../advanced/custom-backends)
+- Explore [Advanced Configuration](configuration)

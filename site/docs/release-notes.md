@@ -322,7 +322,7 @@ MIT License
 
 Copyright (c) 2024-2025 DDSE Foundation
 
-See [LICENSE](LICENSE) file for details.
+See LICENSE file for details.
 
 ---
 

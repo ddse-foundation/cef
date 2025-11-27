@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-known-issues" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.9.2">
+<title data-rh="true">Known Issues | CEF Framework</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://ddse-foundation.github.io/cef/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://ddse-foundation.github.io/cef/img/logo.svg"><meta data-rh="true" property="og:url" content="https://ddse-foundation.github.io/cef/docs/known-issues"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="keywords" content="java, llm, rag, knowledge graph, vector database, context engineering, orm, spring boot, ai"><meta data-rh="true" property="og:type" content="website"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Known Issues | CEF Framework"><meta data-rh="true" name="description" content="Version: beta-0.5"><meta data-rh="true" property="og:description" content="Version: beta-0.5"><link data-rh="true" rel="icon" href="/cef/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://ddse-foundation.github.io/cef/docs/known-issues"><link data-rh="true" rel="alternate" href="https://ddse-foundation.github.io/cef/docs/known-issues" hreflang="en"><link data-rh="true" rel="alternate" href="https://ddse-foundation.github.io/cef/docs/known-issues" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Known Issues","item":"https://ddse-foundation.github.io/cef/docs/known-issues"}]}</script><link rel="stylesheet" href="/cef/assets/css/styles.3efccf33.css">
+<script src="/cef/assets/js/runtime~main.ad3c20f7.js" defer="defer"></script>
+<script src="/cef/assets/js/main.ad443d3c.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/cef/img/logo.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/cef/"><div class="navbar__logo"><img src="/cef/img/logo.svg" alt="CEF Logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/cef/img/logo.svg" alt="CEF Logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">CEF Framework</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/cef/docs/intro">Documentation</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://github.com/ddse-foundation/cef" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/cef/docs/intro"><span title="Introduction" class="linkLabel_WmDU">Introduction</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link"><span title="Getting Started" class="categoryLinkLabel_W154">Getting Started</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/getting-started/installation"><span title="Installation" class="linkLabel_WmDU">Installation</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/getting-started/configuration"><span title="Configuration" class="linkLabel_WmDU">Configuration</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/quickstart"><span title="CEF Quick Start Guide" class="linkLabel_WmDU">CEF Quick Start Guide</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link"><span title="Core Concepts" class="categoryLinkLabel_W154">Core Concepts</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/concepts/knowledge-model"><span title="Knowledge Model" class="linkLabel_WmDU">Knowledge Model</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/architecture"><span title="Context Engineering Framework (CEF) - Architecture" class="linkLabel_WmDU">Context Engineering Framework (CEF) - Architecture</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/user-guide"><span title="CEF User Guide: ORM for Context Engineering" class="linkLabel_WmDU">CEF User Guide: ORM for Context Engineering</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link"><span title="Tutorials" class="categoryLinkLabel_W154">Tutorials</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/tutorials/build-your-first-model"><span title="Hands-On: Build a Knowledge Model in 30 Minutes" class="linkLabel_WmDU">Hands-On: Build a Knowledge Model in 30 Minutes</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link"><span title="Benchmarks &amp; Validation" class="categoryLinkLabel_W154">Benchmarks &amp; Validation</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/benchmarks"><span title="Benchmarks (beta-0.5)" class="linkLabel_WmDU">Benchmarks (beta-0.5)</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/validation"><span title="Validation &amp; Test Coverage" class="linkLabel_WmDU">Validation &amp; Test Coverage</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active"><span title="Reference" class="categoryLinkLabel_W154">Reference</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/cef/docs/release-notes"><span title="Release Notes" class="linkLabel_WmDU">Release Notes</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/cef/docs/known-issues"><span title="Known Issues" class="linkLabel_WmDU">Known Issues</span></a></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/cef/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Reference</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Known Issues</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Known Issues</h1></header>
+<p><strong>Version:</strong> beta-0.5<br>
+<strong>Last Updated:</strong> November 27, 2025</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="testing-status">Testing Status<a href="#testing-status" class="hash-link" aria-label="Direct link to Testing Status" title="Direct link to Testing Status" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="-tested-configurations">✅ Tested Configurations<a href="#-tested-configurations" class="hash-link" aria-label="Direct link to ✅ Tested Configurations" title="Direct link to ✅ Tested Configurations" translate="no">​</a></h3>
+<p>The following configurations have been thoroughly tested and validated:</p>
+<ul>
+<li class=""><strong>Database:</strong> DuckDB (embedded)</li>
+<li class=""><strong>LLM Provider:</strong> vLLM with Qwen3-Coder-30B-A3B-Instruct-FP8</li>
+<li class=""><strong>Embedding Model:</strong> Ollama with nomic-embed-text (768 dimensions)</li>
+<li class=""><strong>Graph Store:</strong> JGraphT (in-memory)</li>
+<li class=""><strong>Operating Systems:</strong> Linux</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="️-untested-configurations">⚠️ Untested Configurations<a href="#️-untested-configurations" class="hash-link" aria-label="Direct link to ⚠️ Untested Configurations" title="Direct link to ⚠️ Untested Configurations" translate="no">​</a></h3>
+<p>The following configurations are implemented and available but <strong>not yet tested in production</strong>:</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="databases">Databases<a href="#databases" class="hash-link" aria-label="Direct link to Databases" title="Direct link to Databases" translate="no">​</a></h4>
+<ul>
+<li class=""><strong>PostgreSQL</strong> - Configuration available, schema provided, but not fully tested<!-- -->
+<ul>
+<li class="">R2DBC reactive driver configured</li>
+<li class="">pgvector extension support included</li>
+<li class="">Migration scripts available</li>
+<li class=""><strong>Status:</strong> Needs integration testing</li>
+</ul>
+</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="llm-providers">LLM Providers<a href="#llm-providers" class="hash-link" aria-label="Direct link to LLM Providers" title="Direct link to LLM Providers" translate="no">​</a></h4>
+<ul>
+<li class="">
+<p><strong>OpenAI</strong> - Client factory implemented, configuration available</p>
+<ul>
+<li class="">GPT-4, GPT-3.5 Turbo support</li>
+<li class=""><strong>Status:</strong> Needs API key testing</li>
+</ul>
+</li>
+<li class="">
+<p><strong>Ollama (LLM)</strong> - Configuration available for Llama models</p>
+<ul>
+<li class="">Llama 3.2, Llama 3.1 support</li>
+<li class=""><strong>Status:</strong> Needs comprehensive testing</li>
+</ul>
+</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="vector-stores">Vector Stores<a href="#vector-stores" class="hash-link" aria-label="Direct link to Vector Stores" title="Direct link to Vector Stores" translate="no">​</a></h4>
+<ul>
+<li class="">
+<p><strong>Qdrant</strong> - Interface implemented, configuration available</p>
+<ul>
+<li class=""><strong>Status:</strong> Needs deployment and integration testing</li>
+</ul>
+</li>
+<li class="">
+<p><strong>Pinecone</strong> - Interface implemented, configuration available</p>
+<ul>
+<li class=""><strong>Status:</strong> Needs API key and integration testing</li>
+</ul>
+</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="graph-stores">Graph Stores<a href="#graph-stores" class="hash-link" aria-label="Direct link to Graph Stores" title="Direct link to Graph Stores" translate="no">​</a></h4>
+<ul>
+<li class=""><strong>Neo4j</strong> - Interface defined, configuration available<!-- -->
+<ul>
+<li class="">Cypher query support planned</li>
+<li class=""><strong>Status:</strong> Requires Neo4j instance and integration testing</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="known-issues-1">Known Issues<a href="#known-issues-1" class="hash-link" aria-label="Direct link to Known Issues" title="Direct link to Known Issues" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-memory-management-jgrapht">1. Memory Management (JGraphT)<a href="#1-memory-management-jgrapht" class="hash-link" aria-label="Direct link to 1. Memory Management (JGraphT)" title="Direct link to 1. Memory Management (JGraphT)" translate="no">​</a></h3>
+<p><strong>Issue:</strong> In-memory graph store (JGraphT) may experience memory pressure with large knowledge bases.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Recommended maximum: 100,000 nodes</li>
+<li class="">Memory usage: ~350MB for 100K nodes, 500K edges</li>
+<li class="">No automatic pagination or lazy loading</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Monitor heap usage with <code>-Xmx</code> settings</li>
+<li class="">Consider Neo4j for graphs &gt;100K nodes</li>
+<li class="">Implement periodic graph pruning for time-bound data</li>
+</ul>
+<p><strong>Status:</strong> By design - JGraphT is optimized for fast in-memory operations</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-embedding-generation-performance">2. Embedding Generation Performance<a href="#2-embedding-generation-performance" class="hash-link" aria-label="Direct link to 2. Embedding Generation Performance" title="Direct link to 2. Embedding Generation Performance" translate="no">​</a></h3>
+<p><strong>Issue:</strong> Batch embedding generation can be slow for large document sets.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Single-threaded embedding calls to Ollama</li>
+<li class="">~200ms per embedding with nomic-embed-text</li>
+<li class="">Initial index of 10,000 chunks takes ~30-40 minutes</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Use batch indexing during off-peak hours</li>
+<li class="">Consider pre-generating embeddings offline</li>
+<li class="">Increase Ollama concurrency settings</li>
+</ul>
+<p><strong>Status:</strong> Planned for optimization in v0.6</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-postgresql-schema-auto-creation">3. PostgreSQL Schema Auto-Creation<a href="#3-postgresql-schema-auto-creation" class="hash-link" aria-label="Direct link to 3. PostgreSQL Schema Auto-Creation" title="Direct link to 3. PostgreSQL Schema Auto-Creation" translate="no">​</a></h3>
+<p><strong>Issue:</strong> R2DBC does not automatically create tables on startup like JPA.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Schema files provided in <code>src/main/resources/</code></li>
+<li class="">Requires manual execution or Flyway/Liquibase integration</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Run <code>schema-postgresql.sql</code> manually before first startup</li>
+<li class="">Or configure Flyway migration (example in docs)</li>
+</ul>
+<p><strong>Status:</strong> Documentation updated, auto-migration planned for v1.0</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-vector-search-with-duckdb">4. Vector Search with DuckDB<a href="#4-vector-search-with-duckdb" class="hash-link" aria-label="Direct link to 4. Vector Search with DuckDB" title="Direct link to 4. Vector Search with DuckDB" translate="no">​</a></h3>
+<p><strong>Issue:</strong> DuckDB vector similarity search uses brute-force comparison (no HNSW index).</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Performance degrades with &gt;50,000 chunks</li>
+<li class="">No approximate nearest neighbor (ANN) support in DuckDB VSS extension</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Use PostgreSQL with pgvector for large-scale deployments</li>
+<li class="">Implement result caching for frequent queries</li>
+</ul>
+<p><strong>Status:</strong> DuckDB limitation - consider PostgreSQL for production</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-concurrent-indexing">5. Concurrent Indexing<a href="#5-concurrent-indexing" class="hash-link" aria-label="Direct link to 5. Concurrent Indexing" title="Direct link to 5. Concurrent Indexing" translate="no">​</a></h3>
+<p><strong>Issue:</strong> Multiple concurrent indexing operations may cause race conditions in graph updates.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">JGraphT in-memory store is not thread-safe by default</li>
+<li class="">Edge additions during concurrent node updates may be inconsistent</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Use sequential indexing for initial data load</li>
+<li class="">Implement application-level locking for concurrent updates</li>
+</ul>
+<p><strong>Status:</strong> Thread-safe wrapper planned for v0.6</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-context-window-token-limits">6. Context Window Token Limits<a href="#6-context-window-token-limits" class="hash-link" aria-label="Direct link to 6. Context Window Token Limits" title="Direct link to 6. Context Window Token Limits" translate="no">​</a></h3>
+<p><strong>Issue:</strong> Large relationship subgraphs may exceed LLM context windows.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">No automatic context pruning or summarization</li>
+<li class="">Deep graph traversals (depth &gt;3) can generate excessive context</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Limit traversal depth to 2-3 hops</li>
+<li class="">Use <code>topK</code> parameter to control result size</li>
+<li class="">Implement custom context filtering in application layer</li>
+</ul>
+<p><strong>Status:</strong> Intelligent context truncation planned for v0.7</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="7-relationship-type-validation">7. Relationship Type Validation<a href="#7-relationship-type-validation" class="hash-link" aria-label="Direct link to 7. Relationship Type Validation" title="Direct link to 7. Relationship Type Validation" translate="no">​</a></h3>
+<p><strong>Issue:</strong> No runtime validation that edges match defined RelationType schemas.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Framework accepts any relation type string</li>
+<li class="">Semantic hints (HIERARCHY, CAUSALITY) are advisory only</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Implement application-level validation</li>
+<li class="">Use strict entity builders with type checking</li>
+</ul>
+<p><strong>Status:</strong> Schema validation framework planned for v0.8</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="8-docker-compose-networking">8. Docker Compose Networking<a href="#8-docker-compose-networking" class="hash-link" aria-label="Direct link to 8. Docker Compose Networking" title="Direct link to 8. Docker Compose Networking" translate="no">​</a></h3>
+<p><strong>Issue:</strong> Ollama container may not be accessible from host on some Docker Desktop versions.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">DNS resolution of <code>ollama:11434</code> fails from host machine</li>
+<li class="">WSL2 networking issues on Windows</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Use <code>localhost:11434</code> instead of <code>ollama:11434</code> in application.yml</li>
+<li class="">Or add <code>127.0.0.1 ollama</code> to /etc/hosts</li>
+</ul>
+<p><strong>Status:</strong> Documentation updated with troubleshooting steps</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="9-query-performance-monitoring">9. Query Performance Monitoring<a href="#9-query-performance-monitoring" class="hash-link" aria-label="Direct link to 9. Query Performance Monitoring" title="Direct link to 9. Query Performance Monitoring" translate="no">​</a></h3>
+<p><strong>Issue:</strong> Limited built-in query performance metrics.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">No automatic slow query logging</li>
+<li class="">Graph traversal metrics not exposed via actuator</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Enable DEBUG logging for <code>org.ddse.ml.cef</code></li>
+<li class="">Use Spring Boot Actuator with custom metrics</li>
+</ul>
+<p><strong>Status:</strong> Enhanced observability planned for v0.6</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="10-multi-tenancy-support">10. Multi-tenancy Support<a href="#10-multi-tenancy-support" class="hash-link" aria-label="Direct link to 10. Multi-tenancy Support" title="Direct link to 10. Multi-tenancy Support" translate="no">​</a></h3>
+<p><strong>Issue:</strong> No built-in tenant isolation for knowledge graphs.</p>
+<p><strong>Details:</strong></p>
+<ul>
+<li class="">Single shared graph store per application instance</li>
+<li class="">No tenant-specific caching or partitioning</li>
+</ul>
+<p><strong>Workaround:</strong></p>
+<ul>
+<li class="">Deploy separate application instances per tenant</li>
+<li class="">Implement application-level filtering with tenant_id in node properties</li>
+</ul>
+<p><strong>Status:</strong> Multi-tenancy patterns documented in USER_GUIDE.md</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="reporting-issues">Reporting Issues<a href="#reporting-issues" class="hash-link" aria-label="Direct link to Reporting Issues" title="Direct link to Reporting Issues" translate="no">​</a></h2>
+<p>If you encounter issues not listed here:</p>
+<ol>
+<li class="">Check the <a class="" href="/cef/docs/user-guide">User Guide</a> Troubleshooting section</li>
+<li class="">Review <a class="" href="/cef/docs/architecture">Architecture</a> for design constraints</li>
+<li class="">Enable DEBUG logging: <code>logging.level.org.ddse.ml.cef=DEBUG</code></li>
+<li class="">Report via GitHub Issues with:<!-- -->
+<ul>
+<li class="">Configuration details (database, LLM provider, models)</li>
+<li class="">Error logs and stack traces</li>
+<li class="">Steps to reproduce</li>
+<li class="">Expected vs actual behavior</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="testing-contributions-welcome">Testing Contributions Welcome<a href="#testing-contributions-welcome" class="hash-link" aria-label="Direct link to Testing Contributions Welcome" title="Direct link to Testing Contributions Welcome" translate="no">​</a></h2>
+<p>We welcome community testing and feedback on untested configurations:</p>
+<ul>
+<li class=""><strong>PostgreSQL integration</strong> - Production deployment reports</li>
+<li class=""><strong>OpenAI provider</strong> - API compatibility testing</li>
+<li class=""><strong>Neo4j graph store</strong> - Large-scale graph performance</li>
+<li class=""><strong>Qdrant/Pinecone</strong> - Vector store benchmarking</li>
+<li class=""><strong>Windows/macOS</strong> - Platform compatibility</li>
+</ul>
+<p>Contact DDSE Foundation at <a href="https://ddse-foundation.github.io/" target="_blank" rel="noopener noreferrer" class="">https://ddse-foundation.github.io/</a> for contribution guidelines.</p>
+<hr>
+<p><strong>DDSE Foundation</strong> - <a href="https://ddse-foundation.github.io/" target="_blank" rel="noopener noreferrer" class="">https://ddse-foundation.github.io/</a></p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/ddse-foundation/cef/tree/main/site/docs/known-issues.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/cef/docs/release-notes"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Release Notes</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#testing-status" class="table-of-contents__link toc-highlight">Testing Status</a><ul><li><a href="#-tested-configurations" class="table-of-contents__link toc-highlight">✅ Tested Configurations</a></li><li><a href="#️-untested-configurations" class="table-of-contents__link toc-highlight">⚠️ Untested Configurations</a></li></ul></li><li><a href="#known-issues-1" class="table-of-contents__link toc-highlight">Known Issues</a><ul><li><a href="#1-memory-management-jgrapht" class="table-of-contents__link toc-highlight">1. Memory Management (JGraphT)</a></li><li><a href="#2-embedding-generation-performance" class="table-of-contents__link toc-highlight">2. Embedding Generation Performance</a></li><li><a href="#3-postgresql-schema-auto-creation" class="table-of-contents__link toc-highlight">3. PostgreSQL Schema Auto-Creation</a></li><li><a href="#4-vector-search-with-duckdb" class="table-of-contents__link toc-highlight">4. Vector Search with DuckDB</a></li><li><a href="#5-concurrent-indexing" class="table-of-contents__link toc-highlight">5. Concurrent Indexing</a></li><li><a href="#6-context-window-token-limits" class="table-of-contents__link toc-highlight">6. Context Window Token Limits</a></li><li><a href="#7-relationship-type-validation" class="table-of-contents__link toc-highlight">7. Relationship Type Validation</a></li><li><a href="#8-docker-compose-networking" class="table-of-contents__link toc-highlight">8. Docker Compose Networking</a></li><li><a href="#9-query-performance-monitoring" class="table-of-contents__link toc-highlight">9. Query Performance Monitoring</a></li><li><a href="#10-multi-tenancy-support" class="table-of-contents__link toc-highlight">10. Multi-tenancy Support</a></li></ul></li><li><a href="#reporting-issues" class="table-of-contents__link toc-highlight">Reporting Issues</a></li><li><a href="#testing-contributions-welcome" class="table-of-contents__link toc-highlight">Testing Contributions Welcome</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Documentation</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/cef/docs/intro">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/cef/docs/architecture">Architecture</a></li><li class="footer__item"><a class="footer__link-item" href="/cef/docs/user-guide">User Guide</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/ddse-foundation/cef/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Discussions<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/ddse-foundation/cef/issues" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Issues<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://ddse-foundation.github.io/" target="_blank" rel="noopener noreferrer" class="footer__link-item">DDSE Foundation<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/ddse-foundation/cef" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a class="footer__link-item" href="/cef/docs/release-notes">Release Notes</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2024-2025 DDSE Foundation. Licensed under MIT. Built by Mahmudur R Manna (mrmanna).</div></div></div></footer></div>
+</body>
+</html>
