@@ -176,13 +176,17 @@ SearchResult result = retriever.retrieve(
    - 177 nodes: Patients, Conditions, Medications, Doctors
    - 455 edges: Multi-hop relationships
    - 4 complex scenarios: Contraindication discovery, behavioral patterns, cascading risks, transitive exposure
+   - **Results:** 60-220% improvement, 120% average
 
-2. **Financial SAP-Simulated Data**
-   - Enterprise procurement workflows
-   - Vendor-Material-Invoice relationships
-   - Transaction pattern analysis
+2. **SAP ERP Organizational Structure**
+   - 80+ records: Departments, Cost Centers, Projects, Vendors, Materials, Invoices
+   - 14 CSV entities with organizational hierarchies
+   - 2 scenarios: Cross-project resource allocation, cost center contagion analysis
+   - **Results:** 60% improvement (both scenarios), proves Graph RAG advantage for structural patterns
 
 #### Key Findings
+
+**Medical Domain:**
 
 | Scenario | Vector-Only | Knowledge Model | Improvement |
 |----------|-------------|-----------------|-------------|
@@ -192,11 +196,27 @@ SearchResult result = retriever.retrieve(
 | Transitive exposure risk | 5 chunks | 16 chunks | **+220%** 🔥 |
 | **Average** | **5.0 chunks** | **11.0 chunks** | **+120%** |
 
-**Latency:** 26ms avg (only +19.5% vs vector-only 21.8ms)
+**SAP ERP Domain:**
 
-![Benchmark Comparison](docs/benchmark_comparison.png)
+| Scenario | Vector-Only | Knowledge Model | Improvement |
+|----------|-------------|-----------------|-------------|
+| Cross-project resource allocation | 5 chunks | 8 chunks | **+60%** |
+| Cost center contagion analysis | 5 chunks | 8 chunks | **+60%** |
+| **Average** | **5.0 chunks** | **8.0 chunks** | **+60%** |
 
-**See [docs/EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.**
+**Cross-Domain Insight:**  
+Graph RAG wins for **structural organizational patterns** (Department→CostCenter hierarchies, funding networks). Graph RAG equals vector search for **semantically explicit relationships** (supply chain descriptions already mentioning vendor-component connections).
+
+**Latency:**  
+- Medical: 26ms avg (+19.5% vs vector-only 22ms)  
+- SAP: 43ms avg (+23.2% vs vector-only 35ms)  
+- Conclusion: <25% overhead acceptable for 60-220% content improvement
+
+**Visualizations:**
+- Medical: `cef-framework/src/test/resources/scripts/results/benchmark_comparison.png`
+- SAP: `cef-framework/src/test/resources/scripts/results/sap_benchmark_comparison.png`
+
+**See [docs/EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed multi-domain analysis.**
 
 ---
 

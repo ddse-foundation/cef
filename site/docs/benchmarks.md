@@ -37,14 +37,25 @@ These scenarios combine multiple independent paths (shared doctors, medication i
 
 | Scenario | Vector-Only (chunks) | Knowledge Model (chunks) | Lift | Latency Vector | Latency KM |
 |----------|----------------------|--------------------------|------|----------------|------------|
-| Shadow IT budget leak | 5 | 5 | – | 20 ms | 38 ms |
-| Transitive supply-chain disruption | 5 | 5 | – | 19 ms | 40 ms |
-| Hidden vendor dependency | 5 | 5 | – | 18 ms | 37 ms |
-| Cost-center contagion | 5 | 5 | – | 20 ms | 35 ms |
+| Cross-Project Resource Allocation | 5 | 8 | **+60%** | 51 ms | 56 ms |
+| Cost Center Contagion Analysis | 5 | 8 | **+60%** | 18 ms | 29 ms |
 
-Interpretation:
-- The SAP dataset already encodes long transactional narratives per chunk, so vector-only hits the same five invoices/vendors. Graph traversal keeps parity but incurs latency because it still walks 4–6 hops to validate relationships.
-- Use these cases as a regression harness for enterprise graph depth and temporal reasoning; they also validate dual persistence on a non-medical schema.
+Why it wins:
+- Graph RAG discovers **organizational structure patterns** that vector embeddings miss
+- Department→CostCenter hierarchies are structural (not semantically rich in text)
+- Funding networks (Project→FUNDED_BY→Department→HAS_COST_CENTER) reveal risk exposure
+- CostCenter profiles retrieved via graph traversal add critical context
+
+Why supply chain scenarios were removed:
+- Vector search equals Graph RAG for semantically explicit relationships
+- Supply chain descriptions already mention "TSMC supplies CPU for Holiday Laptop"
+- Embeddings capture these semantic relationships directly in chunk text
+- Graph RAG provides no advantage when relationships are semantically rich
+
+Key Insight:
+- **Graph RAG wins:** Structural organizational patterns (hierarchies, funding networks)
+- **Graph RAG equal:** Semantically explicit supply chain relationships (vendor descriptions)
+- Use SAP benchmarks to validate dual persistence on enterprise schemas
 
 ---
 

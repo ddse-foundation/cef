@@ -183,27 +183,51 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
         // Build GraphPattern from hints (NEW: structured pattern support)
         List<org.ddse.ml.cef.dto.GraphPattern> patterns = new ArrayList<>();
         if (graphHints.length > 1) {
-            // Create SEPARATE 1-hop patterns for each relation type
-            // All patterns start from graphHints[0] (e.g., Patient)
-            // This matches the actual graph structure where relations fan out from the same
-            // source node
             String sourceLabel = graphHints[0];
 
-            for (int i = 1; i < graphHints.length; i++) {
-                String relationType = graphHints[i];
-                // Create a single-hop pattern: sourceLabel --relationType--> *
-                List<org.ddse.ml.cef.dto.TraversalStep> steps = List.of(
-                        new org.ddse.ml.cef.dto.TraversalStep(
-                                sourceLabel, // e.g., "Patient"
-                                relationType, // e.g., "HAS_CONDITION"
-                                "*", // wildcard for any target
-                                0 // single step
-                        ));
+            // Detect if this is a chain pattern (supply chain cascade) or star pattern
+            // (patient conditions)
+            // Chain patterns: Location, Event, Product (single entity flowing through
+            // supply chain)
+            // Star patterns: Patient, Department (central entity with multiple direct
+            // relationships)
+            boolean isChainPattern = sourceLabel.equals("Location") || sourceLabel.equals("Event") ||
+                    sourceLabel.equals("Product");
+
+            if (isChainPattern) {
+                // Create ONE multi-step sequential pattern for cascading traversal
+                // Example: Location→LOCATED_IN→Vendor→SUPPLIED_BY→Material→COMPONENT_OF→Product
+                List<org.ddse.ml.cef.dto.TraversalStep> steps = new ArrayList<>();
+                for (int i = 1; i < graphHints.length; i++) {
+                    steps.add(new org.ddse.ml.cef.dto.TraversalStep(
+                            i == 1 ? sourceLabel : "*", // First step uses source label, rest use wildcard
+                            graphHints[i],
+                            "*",
+                            i - 1));
+                }
 
                 patterns.add(org.ddse.ml.cef.dto.GraphPattern.multiHop(
-                        "pattern-" + sourceLabel + "-" + relationType,
+                        "pattern-" + sourceLabel + "-chain",
                         steps,
-                        "Single-hop pattern: " + sourceLabel + " --" + relationType + "--> *"));
+                        "Multi-step chain pattern: " + sourceLabel + " cascade"));
+            } else {
+                // Create SEPARATE 1-hop patterns for star topology (existing logic)
+                // All patterns start from graphHints[0] (e.g., Patient)
+                // This matches graph structures where relations fan out from same source node
+                for (int i = 1; i < graphHints.length; i++) {
+                    String relationType = graphHints[i];
+                    List<org.ddse.ml.cef.dto.TraversalStep> steps = List.of(
+                            new org.ddse.ml.cef.dto.TraversalStep(
+                                    sourceLabel,
+                                    relationType,
+                                    "*",
+                                    0));
+
+                    patterns.add(org.ddse.ml.cef.dto.GraphPattern.multiHop(
+                            "pattern-" + sourceLabel + "-" + relationType,
+                            steps,
+                            "Single-hop pattern: " + sourceLabel + " --" + relationType + "--> *"));
+                }
             }
         }
 

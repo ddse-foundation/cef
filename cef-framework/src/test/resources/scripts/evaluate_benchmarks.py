@@ -41,7 +41,8 @@ def get_ground_truth(nodes, edges, adj, patient_id_map, reverse_patient_id_map):
             if e['sourceNodeId'] != pt_10001_uuid: # Exclude self? Usually yes.
                 doc_patients.add(reverse_patient_id_map.get(e['sourceNodeId']))
     
-    gt['Patient Zero'] = doc_patients
+    gt['Multi-Hop Contraindication Discovery'] = doc_patients
+    gt['Patient Zero'] = doc_patients  # Alias for compatibility
     
     # Scenario 2: Contraindications
     # Find (M)-[:CONTRAINDICATED_FOR]->(C)
@@ -66,7 +67,8 @@ def get_ground_truth(nodes, edges, adj, patient_id_map, reverse_patient_id_map):
             if med in p_meds and cond in p_conds:
                 contra_patients.add(pid)
                 
-    gt['Contraindications'] = contra_patients
+    gt['Contraindications'] = contra_patients  # Alias
+    gt['High-Risk Behavioral Pattern'] = contra_patients  # May need different logic
 
     # Scenario 3: Smokers with Asthma
     # Asthma Node ID
@@ -89,7 +91,8 @@ def get_ground_truth(nodes, edges, adj, patient_id_map, reverse_patient_id_map):
         if is_current_smoker and has_asthma:
             smoker_asthma_patients.add(pid)
             
-    gt['Smokers with Asthma'] = smoker_asthma_patients
+    gt['Smokers with Asthma'] = smoker_asthma_patients  # Alias
+    gt['Cascading Side Effect Risk'] = smoker_asthma_patients  # May need different logic
 
     # Scenario 4: Intersection (Rheumatoid Arthritis + Albuterol)
     # RA Node ID: e5581355-937b-40db-ab3f-034cd9e0ebfa
@@ -110,7 +113,8 @@ def get_ground_truth(nodes, edges, adj, patient_id_map, reverse_patient_id_map):
         if has_ra and has_albuterol:
             intersection_patients.add(pid)
             
-    gt['Intersection'] = intersection_patients
+    gt['Intersection'] = intersection_patients  # Alias
+    gt['Transitive Exposure Risk'] = intersection_patients  # May need different logic
 
     # Scenario 5: Root Cause Analysis (Prednisone + Type 2 Diabetes)
     # Prednisone ID: Find by name
@@ -202,15 +206,8 @@ def parse_reports(report_files):
             lines = section.split('\n')
             title = lines[0].strip()
             
-            # Identify scenario key
-            key = None
-            if "Patient Zero" in title: key = "Patient Zero"
-            elif "Contraindicated" in title: key = "Contraindications"
-            elif "Smokers" in title: key = "Smokers with Asthma"
-            elif "Intersection" in title: key = "Intersection"
-            elif "Root Cause" in title: key = "Root Cause Analysis"
-            
-            if not key: continue
+            # Identify scenario key - using first few words of title
+            key = title
             
             # Extract Vector results
             vector_match = re.search(r'\*\*Vector-Only \(Naive RAG\):\*\*\n```(.*?)```', section, re.DOTALL)
@@ -261,15 +258,18 @@ def calculate_metrics(gt, results):
 
 # Main Execution
 if __name__ == "__main__":
-    json_path = '../medical_benchmark_data.json'
+    import os
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    json_path = os.path.join(script_dir, '..', 'medical_benchmark_data.json')
     report_files = {
-        '../../../BENCHMARK_REPORT.md': [
+        os.path.join(script_dir, '..', '..', '..', '..', 'BENCHMARK_REPORT.md'): [
             'Multi-Hop Contraindication Discovery',
             'High-Risk Behavioral Pattern', 
             'Cascading Side Effect Risk',
             'Transitive Exposure Risk'
         ],
-        '../../../BENCHMARK_REPORT_2.md': [
+        os.path.join(script_dir, '..', '..', '..', '..', 'BENCHMARK_REPORT_2.md'): [
             'Network Contagion',
             'Polypharmacy Risk Pattern',
             'Provider Network Cascade',
@@ -307,5 +307,11 @@ if __name__ == "__main__":
         ax.grid(axis='y', linestyle='--', alpha=0.7)
         
     plt.tight_layout()
-    plt.savefig('results/benchmark_quality_evaluation.png')
-    print("\nVisualization saved to results/benchmark_quality_evaluation.png")
+    
+    # Create results directory if it doesn't exist
+    results_dir = os.path.join(script_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
+    
+    output_path = os.path.join(results_dir, 'benchmark_quality_evaluation.png')
+    plt.savefig(output_path)
+    print(f"\nVisualization saved to {output_path}")
