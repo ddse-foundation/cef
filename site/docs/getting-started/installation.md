@@ -86,9 +86,9 @@ ollama pull nomic-embed-text
 ollama serve
 ```
 
-### Option 2: Production Setup with PostgreSQL
+### Option 2: Persistent Setup with PostgreSQL (Experimental)
 
-For production deployments with persistent storage:
+For advanced deployments with persistent storage (currently in alpha):
 
 ```bash
 # Start PostgreSQL with pgvector extension

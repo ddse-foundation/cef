@@ -101,7 +101,9 @@ See [Benchmark Analysis](benchmarks) for complete benchmark analysis.
 
 ---
 
-## Option 2: With PostgreSQL (Demonstrates Database Agnosticism)
+## Option 2: With PostgreSQL (Experimental)
+
+> **Note:** PostgreSQL support is currently in **alpha**. The configuration is provided for testing purposes but has not been fully validated in the v0.5 release.
 
 ### Step 1: Start Services with PostgreSQL
 
@@ -137,9 +139,9 @@ mvn test -Dspring.profiles.active=postgres
 
 ---
 
-## Option 3: Full Setup (PostgreSQL + MinIO + Ollama)
+## Option 3: Full Setup (PostgreSQL + MinIO + Ollama) (Experimental)
 
-For the complete demonstration including blob storage.
+> **Note:** Full stack setup with MinIO and PostgreSQL is **experimental** and intended for advanced users contributing to the framework's development.
 
 ### Step 1: Start All Services
 

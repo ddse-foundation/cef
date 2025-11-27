@@ -1,7 +1,7 @@
 # Context Engineering Framework (CEF) - Architecture
 
 **Version:** beta-0.5  
-**Status:** Beta Release (Production-Ready with Tested Configurations)  
+**Status:** Research Beta (Optimized for Rapid Prototyping)  
 **Date:** November 27, 2025  
 **Target Audience:** AI Conference - Technical Experts
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-**Context Engineering Framework (CEF)** is a domain-agnostic Java ORM for building production-grade LLM applications with **knowledge model persistence**. Just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores (graph + vector) for LLM context.
+**Context Engineering Framework (CEF)** is a domain-agnostic Java ORM for building **research-grade** LLM applications with **knowledge model persistence**. Just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores (graph + vector) for LLM context.
 
 ### Key Innovation
 
@@ -51,7 +51,7 @@ CEF provides an ORM layer for context engineering - define knowledge models (ent
 ✅ **Intelligent Context Assembly** - Relationship navigation with automatic fallback strategies  
 ✅ **Domain Agnostic** - Framework provides primitives, you define semantics  
 ✅ **Pluggable Storage** - Swap backends via configuration (JGraphT, Neo4j, Postgres, Qdrant, Pinecone)  
-✅ **Production Patterns** - Caching, lifecycle hooks, batch operations, monitoring  
+✅ **Structured Patterns** - Caching, lifecycle hooks, batch operations, monitoring  
 
 ---
 
@@ -765,7 +765,7 @@ Benefit: "Products for user Z" combines graph + vector for hybrid recommendation
 
 **Key Innovation:** Graph reasoning → vector search → keyword fallback with LLM-driven entity resolution via MCP tool with dynamic schema injection.
 
-**Production Status:** Ready for deployment with proven patterns (dual persistence, caching, observability) borrowed from mature ORMs like Hibernate.
+**Production Status:** Validated for research scenarios with proven patterns (dual persistence, caching, observability) borrowed from mature ORMs like Hibernate.
 
 ---
 

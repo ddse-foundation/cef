@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'CEF Framework',
-  tagline: 'ORM for LLM Context Engineering - Build intelligent applications with graph-powered retrieval',
+  tagline: 'ORM for LLM Context Engineering - Optimized for rapid prototyping and knowledge graph experiments',
   favicon: 'img/favicon.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

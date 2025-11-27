@@ -833,7 +833,9 @@ SearchResult result = retriever.retrieve(query).block();
 
 ## Advanced Patterns
 
-### 1. Caching Strategy (Like Second-Level Cache)
+### 1. Caching Strategy (Planned for v0.6)
+
+*Note: Distributed caching is currently on the roadmap. The following configuration demonstrates the planned API.*
 
 ```java
 @Configuration
@@ -852,31 +854,9 @@ public class CacheConfig {
         return manager;
     }
 }
-
-@Service
-public class CachedRetrievalService {
-    
-    @Autowired
-    private KnowledgeRetriever retriever;
-    
-    @Cacheable(value = "nodes", key = "#id")
-    public Mono<Node> findNodeCached(UUID id) {
-        return retriever.findNode(id);
-    }
-    
-    @Cacheable(value = "search-results", key = "#query.hashCode()")
-    public Mono<SearchResult> retrieveCached(GraphQuery query) {
-        return retriever.retrieve(query);
-    }
-    
-    @CacheEvict(value = "nodes", key = "#id")
-    public Mono<Node> updateNodeAndEvict(UUID id, Map<String, Object> updates) {
-        return indexer.updateNode(id, updates);
-    }
-}
 ```
 
-### 2. Multi-Tenancy (Like JPA Multi-Tenancy)
+### 2. Multi-Tenancy (Planned for v0.6)
 
 ```java
 @Configuration
@@ -885,28 +865,6 @@ public class MultiTenantConfig {
     @Bean
     public TenantKnowledgeIndexer tenantIndexer(KnowledgeIndexer baseIndexer) {
         return new TenantKnowledgeIndexer(baseIndexer);
-    }
-}
-
-@Component
-@Scope("request")
-public class TenantKnowledgeIndexer {
-    
-    private final KnowledgeIndexer delegate;
-    private final ThreadLocal<String> currentTenant = new ThreadLocal<>();
-    
-    public Mono<Node> indexNode(NodeInput input) {
-        String tenant = currentTenant.get();
-        
-        // Add tenant discriminator
-        Map<String, Object> props = new HashMap<>(input.properties());
-        props.put("_tenant", tenant);
-        
-        NodeInput tenantInput = new NodeInput(
-            input.id(), input.label(), props, input.vectorizableContent()
-        );
-        
-        return delegate.indexNode(tenantInput);
     }
 }
 ```

@@ -13,8 +13,10 @@ This is the initial beta release of the Context Engineering Framework (CEF) from
 - **ORM for Context Engineering** - Define knowledge models (nodes, edges) like JPA entities
 - **Dual Persistence** - Automatic management of graph and vector stores
 - **Intelligent Context Assembly** - 3-level strategy (relationship navigation → semantic → keyword)
-- **Production-Ready Patterns** - Repository layer, service patterns, lifecycle hooks
+- **Standard Patterns** - Repository layer, service patterns, lifecycle hooks
 - **Comprehensive Documentation** - USER_GUIDE, ARCHITECTURE, examples
+
+> **Note:** This is a **Community/Research Release**. It is optimized for ease of use and experimentation, not for high-concurrency enterprise production environments. It is ideal for **"Disposable Research Pods"**—ephemeral environments spun up to analyze specific datasets (e.g., financial audits, clinical trials) and then discarded.
 
 ---
 

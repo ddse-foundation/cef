@@ -1,5 +1,7 @@
 # Context Engineering Framework (CEF) - Requirements
 
+> **Status Note (Nov 2025):** This document represents the **vision and roadmap** for the v1.0 release. The current v0.5 release is a **Research Beta** focused on validating the core Knowledge Model concepts. Some features listed here (e.g., "Production-Ready", "Distributed Caching") are planned goals, not current capabilities.
+
 **Project:** Context Engineering Framework (CEF)  
 **Date:** November 24, 2025  
 **Version:** beta-0.5
@@ -15,7 +17,7 @@
 - **Database Agnostic**: Switch between PostgreSQL, DuckDB, Neo4j, or Qdrant without code changes
 - **Provider Agnostic**: Swap OpenAI, Ollama, vLLM seamlessly
 - **Fast**: JGraphT in-memory graph with O(1) lookups and dual persistence
-- **Production Ready**: Built for real work - testing, auditing, and reliability included
+- **Developer Friendly**: Built for rapid prototyping, testing, and experimentation
 
 ### Project Structure
 ```

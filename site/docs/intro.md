@@ -30,12 +30,12 @@
 
 |                     | Vector-Only RAG (typical) | Graph DB + custom GraphRAG | **CEF Knowledge ORM** |
 |---------------------|---------------------------|----------------------------|-----------------------|
-| **Goal**            | Similarity search over chunks | Manual graph modeling plus bespoke prompt work | ORM layer for knowledge models + dual persistence |
-| **Storage**         | Vector DB only            | Graph DB only              | Graph + vector stores kept consistent |
+| **Goal**            | Similarity search over chunks | Manual graph modeling plus bespoke prompt work | **Local/Embedded** ORM for knowledge models |
+| **Storage**         | Vector DB only            | Graph DB only              | Graph + vector stores (Dual Persistence) |
 | **Retrieval**       | Cosine similarity         | Cypher/Gremlin queries; prompt engineering | Pattern traversal → hybrid → fallback (automatic) |
 | **Developer UX**    | Ad-hoc scripts, little schema | Custom ingestion/migrations per project | JPA-like APIs (`indexNode`, `retrieve`), lifecycle hooks |
 | **LLM Integration** | RAG chains per app        | Hand-written prompts per graph | MCP tool with schema injection for LLM tool-calling |
-| **Evidence**        | –                         | –                          | Benchmarked +120% avg chunk lift (medical), 0–9 extra chunks in multi-hop/aggregation tests |
+| **Evidence**        | –                         | –                          | Benchmarked +120% avg chunk lift (medical) in **research scenarios** |
 
 ---
 

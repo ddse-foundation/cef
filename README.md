@@ -1,6 +1,8 @@
 # CEF - Context Engineering Framework
 
-**ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
+**Research-Grade ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
+
+> **⚠️ Community Edition Notice:** This framework is designed for **Developers (Rapid Prototyping)** and **Academics (Experimentation)**. It is **NOT** currently engineered for Enterprise Production use (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
 
 [![Version](https://img.shields.io/badge/version-beta--0.5-blue.svg)](RELEASE_NOTES.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -13,7 +15,14 @@
 
 **CEF is an ORM for LLM context engineering** - just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores for LLM context. 
 
-**✅ Proven with comprehensive benchmarks:** Knowledge Model retrieves **60-220% more relevant content** than vector-only approaches for complex queries requiring relationship reasoning.
+**✅ Validated with comprehensive benchmarks:** Knowledge Model retrieves **60-220% more relevant content** than vector-only approaches for complex queries requiring relationship reasoning.
+
+### Target Audience
+
+- 👩‍💻 **Developers**: Rapidly prototype LLM applications with rich context without setting up complex infrastructure.
+- 🎓 **Academics**: Experiment with GraphRAG algorithms and benchmark against vector-only baselines.
+- 🧪 **Researchers**: Reproducible environment for testing context engineering strategies.
+- 🏢 **Enterprise Research Pods**: Deploy ephemeral, self-contained analysis environments for specific datasets (e.g., "Annual GL Analysis") without requiring permanent heavy infrastructure.
 
 ### Core Capabilities
 

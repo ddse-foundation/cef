@@ -353,7 +353,9 @@ logging:
     org.ddse.ml.cef: DEBUG
 ```
 
-### Production Setup
+### Production Setup (Experimental)
+
+> **Note:** This configuration uses production-grade components (PostgreSQL, vLLM) but the framework integration is currently in **alpha**.
 
 ```yaml
 cef:

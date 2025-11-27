@@ -1,7 +1,7 @@
 # Context Engineering Framework (CEF) - Architecture
 
 **Version:** beta-0.5  
-**Status:** Beta Release (Production-Ready with Tested Configurations)  
+**Status:** Research Beta (Optimized for Rapid Prototyping & Analysis)  
 **Date:** November 27, 2025  
 **Target Audience:** AI Conference - Technical Experts
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-**Context Engineering Framework (CEF)** is a domain-agnostic Java ORM for building production-grade LLM applications with **knowledge model persistence**. Just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores (graph + vector) for LLM context.
+**Context Engineering Framework (CEF)** is a domain-agnostic Java ORM for building **knowledge model persistence** in LLM applications. Just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores (graph + vector) for LLM context.
 
 ### Key Innovation
 
@@ -28,7 +28,7 @@ CEF provides an ORM layer for context engineering - define knowledge models (ent
 | **Fallback** | Query rewrite | 3-level automatic (relation → semantic → keyword) |
 | **Schema** | JPA annotations | Domain-agnostic Node/Edge model |
 | **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (JGraphT, Neo4j, Qdrant, Pinecone) |
-| **Scale** | Millions of rows | 100K nodes (JGraphT, tested) / millions (Neo4j, untested) |
+| **Scale** | Millions of rows | 100K nodes (JGraphT, tested) / millions (Neo4j, experimental) |
 
 ---
 
@@ -51,7 +51,7 @@ CEF provides an ORM layer for context engineering - define knowledge models (ent
 ✅ **Intelligent Context Assembly** - Relationship navigation with automatic fallback strategies  
 ✅ **Domain Agnostic** - Framework provides primitives, you define semantics  
 ✅ **Pluggable Storage** - Swap backends via configuration (JGraphT, Neo4j, Postgres, Qdrant, Pinecone)  
-✅ **Production Patterns** - Caching, lifecycle hooks, batch operations, monitoring  
+✅ **Research Patterns** - Batch operations, monitoring, reproducible benchmarks  
 
 ---
 
@@ -556,38 +556,21 @@ cef:
 
 **Medium Scale (10K-100K nodes)**
 - JGraphT + DuckDB (lightweight) or Postgres
-- Multi-instance with L2 cache (Redis)
+- Single instance with L2 cache (Redis)
 - Memory: 4-8GB per instance
 - Cost: Low (open source + cache)
 
-**Large Scale (100K-1M nodes)**
+**Large Scale (1M+ nodes)**
+- **Experimental / Roadmap**
 - Neo4j + Qdrant
-- Distributed deployment
-- Memory: 16GB+ (Neo4j disk-based)
-- Cost: Medium (infrastructure)
-
-**Very Large Scale (1M+ nodes)**
-- Neo4j cluster + Pinecone
-- Kubernetes deployment
-- Memory: Depends on cluster size
-- Cost: Higher (specialized databases)
+- *Note: While the architecture supports pluggable backends like Neo4j, the current v0.5 implementation loads the active graph into memory for performance. Distributed graph partitioning is planned for v1.0.*
 
 ### High Availability
 
-```yaml
-# Multi-instance deployment with shared cache
-cef:
-  graph:
-    store: neo4j  # Shared across instances
-  vector:
-    store: qdrant  # Shared across instances
-  cache:
-    type: redis  # L2 cache for distributed deployment
-    redis:
-      host: redis-cluster
-      port: 6379
-      ttl: 1800  # 30 minutes
-```
+**Deployment Model**
+This release is designed as a **Single-Instance Research Pod**.
+*   **Ideal for:** Ad-hoc analysis, nightly batch jobs, and isolated research environments.
+*   **Not for:** Multi-instance clusters (distributed locking is on the roadmap).
 
 ### Monitoring & Observability
 
@@ -767,23 +750,23 @@ Benefit: "Products for user Z" combines graph + vector for hybrid recommendation
 **Production Status:** Ready for deployment with proven patterns (dual persistence, caching, observability) borrowed from mature ORMs like Hibernate.
 
 ---
+**Conclusion**
 
-## References
+**Context Engineering Framework (CEF)** addresses critical gaps in existing RAG solutions by combining:
 
-- **DDSE Foundation:** [https://ddse-foundation.github.io/](https://ddse-foundation.github.io/)
-- **Documentation:** See root `/docs` folder for ADR-002.md and requirements.md
-- **Related Research:**
-  - GraphRAG (Microsoft Research, 2024)
-  - Multi-Hop Reasoning over Knowledge Graphs (Stanford, 2023)
-  - Hybrid Search for Information Retrieval (Google, 2023)
-- **Technologies:**
-  - JGraphT: https://jgrapht.org/
-  - pgvector: https://github.com/pgvector/pgvector
-  - Spring AI: https://spring.io/projects/spring-ai
-  - Model Context Protocol: https://modelcontextprotocol.io/
+1. **Graph Reasoning** - Structured relationships enhance retrieval precision
+2. **Automatic Fallback** - 3-level strategy prevents zero-result failures
+3. **Domain Agnostic** - User-defined schemas, framework provides primitives
+4. **Pluggable Architecture** - Scale from 10K to millions of nodes via config
+5. **MCP Integration** - Dynamic schema injection enables agentic LLM behavior
+
+**Target Audience:** Enterprise Research Pods and Academic teams building knowledge-intensive LLM applications where entity relationships matter (medical, legal, finance).
+
+**Key Innovation:** Graph reasoning → vector search → keyword fallback with LLM-driven entity resolution via MCP tool with dynamic schema injection.
+
+**Deployment Status:** Ready for **Ephemeral Research Pods** and **Single-Instance Analysis**. Not recommended for long-running, high-concurrency enterprise clusters in this release.
 
 ---
-
 **Document Version:** 2.0  
 **Last Updated:** November 27, 2025  
 **Author:** Mahmudur R Manna (mrmanna) - Founder and Principal Architect, DDSE Foundation  

@@ -2,7 +2,7 @@
 
 **Domain:** Enterprise ERP (Financial & Supply Chain)
 
-**Date:** 2025-11-27T07:52:36.090424431Z
+**Date:** 2025-11-27T08:37:57.809467928Z
 
 This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on SAP ERP scenarios that require temporal reasoning and supply-chain awareness.
 
@@ -18,7 +18,7 @@ This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **K
 
 | Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
 |--------|------------------------|----------------------------|-------------|
-| **Latency** | 51ms | 56ms | ↑9.8% |
+| **Latency** | 60ms | 72ms | ↑20.0% |
 | **Chunks Retrieved** | 5 | 8 | +3 |
 
 ### Raw Results
@@ -34,14 +34,14 @@ a0c21933-b331-3172-a86a-bbb67a403c30 | node=d5af2c4d-150c-3889-996e-8d9dda7f68c8
 
 **Knowledge Model (Graph RAG):**
 ```
-9d06e196-93aa-392e-ab99-4c47c5dc07c1 | node=ca42f96c-e59e-34f0-a970-d633a937b430 | **COST CENTER PROFILE** Cost Center: CC-102 Name: Data Science Department: ENG
-a0c21933-b331-3172-a86a-bbb67a403c30 | node=d5af2c4d-150c-3889-996e-8d9dda7f68c8 | **DEPARTMENT** Department ID: HR Name: Human Resources Cost Overrun Status: On budget
-dea5899a-2545-3b48-97f6-a87d0e9f565e | node=34d03520-8b75-332c-9b78-ef575c92ecf7 | **DEPARTMENT** Department ID: ENG Name: Engineering Cost Overrun Status: Has overruns
-61cd1d07-3218-34b3-8679-fd6eed64f41a | node=1fd01c54-d076-3c0d-8d3f-4d138a5bb11e | **DEPARTMENT** Department ID: MKT Name: Marketing Cost Overrun Status: On budget
 bd509c7a-2e38-3516-9027-46f8e27ba430 | node=45f6c926-9969-3e6c-b20a-0f3465400d8b | **COST CENTER PROFILE** Cost Center: CC-200 Name: Marketing US Department: MKT
+a0c21933-b331-3172-a86a-bbb67a403c30 | node=d5af2c4d-150c-3889-996e-8d9dda7f68c8 | **DEPARTMENT** Department ID: HR Name: Human Resources Cost Overrun Status: On budget
+61cd1d07-3218-34b3-8679-fd6eed64f41a | node=1fd01c54-d076-3c0d-8d3f-4d138a5bb11e | **DEPARTMENT** Department ID: MKT Name: Marketing Cost Overrun Status: On budget
+8f1e0928-744d-33c9-96bb-d5f352682529 | node=d0e72c85-28e2-3e0a-8712-34061d04b1ee | **COST CENTER PROFILE** Cost Center: CC-300 Name: HR Global Department: HR
 447f1ad0-94ff-382b-8711-fa8c1cdfa809 | node=dd251da6-d0fa-3f7a-aaa7-c840742bd3b5 | **COST CENTER PROFILE** Cost Center: CC-101 Name: DevOps Department: ENG
 1f1d053b-19b0-3798-8e86-d00c01f0a206 | node=b53ea3c6-bd23-30c9-88cf-4c84803a4877 | **COST CENTER PROFILE** Cost Center: CC-100 Name: Engineering Core Department: ENG
-8f1e0928-744d-33c9-96bb-d5f352682529 | node=d0e72c85-28e2-3e0a-8712-34061d04b1ee | **COST CENTER PROFILE** Cost Center: CC-300 Name: HR Global Department: HR
+9d06e196-93aa-392e-ab99-4c47c5dc07c1 | node=ca42f96c-e59e-34f0-a970-d633a937b430 | **COST CENTER PROFILE** Cost Center: CC-102 Name: Data Science Department: ENG
+dea5899a-2545-3b48-97f6-a87d0e9f565e | node=34d03520-8b75-332c-9b78-ef575c92ecf7 | **DEPARTMENT** Department ID: ENG Name: Engineering Cost Overrun Status: Has overruns
 ```
 
 ---
@@ -56,7 +56,7 @@ bd509c7a-2e38-3516-9027-46f8e27ba430 | node=45f6c926-9969-3e6c-b20a-0f3465400d8b
 
 | Metric | Vector-Only (Naive RAG) | Knowledge Model (Graph RAG) | Improvement |
 |--------|------------------------|----------------------------|-------------|
-| **Latency** | 18ms | 29ms | ↑61.1% |
+| **Latency** | 23ms | 27ms | ↑17.4% |
 | **Chunks Retrieved** | 5 | 8 | +3 |
 
 ### Raw Results
@@ -72,14 +72,14 @@ a0c21933-b331-3172-a86a-bbb67a403c30 | node=d5af2c4d-150c-3889-996e-8d9dda7f68c8
 
 **Knowledge Model (Graph RAG):**
 ```
+61cd1d07-3218-34b3-8679-fd6eed64f41a | node=1fd01c54-d076-3c0d-8d3f-4d138a5bb11e | **DEPARTMENT** Department ID: MKT Name: Marketing Cost Overrun Status: On budget
+dea5899a-2545-3b48-97f6-a87d0e9f565e | node=34d03520-8b75-332c-9b78-ef575c92ecf7 | **DEPARTMENT** Department ID: ENG Name: Engineering Cost Overrun Status: Has overruns
 9d06e196-93aa-392e-ab99-4c47c5dc07c1 | node=ca42f96c-e59e-34f0-a970-d633a937b430 | **COST CENTER PROFILE** Cost Center: CC-102 Name: Data Science Department: ENG
 1f1d053b-19b0-3798-8e86-d00c01f0a206 | node=b53ea3c6-bd23-30c9-88cf-4c84803a4877 | **COST CENTER PROFILE** Cost Center: CC-100 Name: Engineering Core Department: ENG
-dea5899a-2545-3b48-97f6-a87d0e9f565e | node=34d03520-8b75-332c-9b78-ef575c92ecf7 | **DEPARTMENT** Department ID: ENG Name: Engineering Cost Overrun Status: Has overruns
-bd509c7a-2e38-3516-9027-46f8e27ba430 | node=45f6c926-9969-3e6c-b20a-0f3465400d8b | **COST CENTER PROFILE** Cost Center: CC-200 Name: Marketing US Department: MKT
-8f1e0928-744d-33c9-96bb-d5f352682529 | node=d0e72c85-28e2-3e0a-8712-34061d04b1ee | **COST CENTER PROFILE** Cost Center: CC-300 Name: HR Global Department: HR
-447f1ad0-94ff-382b-8711-fa8c1cdfa809 | node=dd251da6-d0fa-3f7a-aaa7-c840742bd3b5 | **COST CENTER PROFILE** Cost Center: CC-101 Name: DevOps Department: ENG
-61cd1d07-3218-34b3-8679-fd6eed64f41a | node=1fd01c54-d076-3c0d-8d3f-4d138a5bb11e | **DEPARTMENT** Department ID: MKT Name: Marketing Cost Overrun Status: On budget
 a0c21933-b331-3172-a86a-bbb67a403c30 | node=d5af2c4d-150c-3889-996e-8d9dda7f68c8 | **DEPARTMENT** Department ID: HR Name: Human Resources Cost Overrun Status: On budget
+8f1e0928-744d-33c9-96bb-d5f352682529 | node=d0e72c85-28e2-3e0a-8712-34061d04b1ee | **COST CENTER PROFILE** Cost Center: CC-300 Name: HR Global Department: HR
+bd509c7a-2e38-3516-9027-46f8e27ba430 | node=45f6c926-9969-3e6c-b20a-0f3465400d8b | **COST CENTER PROFILE** Cost Center: CC-200 Name: Marketing US Department: MKT
+447f1ad0-94ff-382b-8711-fa8c1cdfa809 | node=dd251da6-d0fa-3f7a-aaa7-c840742bd3b5 | **COST CENTER PROFILE** Cost Center: CC-101 Name: DevOps Department: ENG
 ```
 
 ---

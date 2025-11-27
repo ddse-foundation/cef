@@ -19,9 +19,9 @@ function HomepageHeader() {
           ORM for LLM Context Engineering
         </p>
         <p className={styles.heroDescription}>
-          Just as Hibernate abstracts relational databases for transactional data, 
-          CEF abstracts knowledge stores for LLM context. Build intelligent applications 
-          with graph-powered retrieval that outperforms vector-only approaches by <strong>60-220%</strong>.
+          Just as Hibernate abstracts databases for transactions, 
+          CEF abstracts knowledge stores for <strong>Context Engineering</strong>. Build, test, and benchmark 
+          intelligent context models in minutes, without the complexity of enterprise graph infrastructure.
         </p>
         <div className={styles.badges}>
           <img src="https://img.shields.io/badge/version-beta--0.5-blue.svg" alt="Version" />
