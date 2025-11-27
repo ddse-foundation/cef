@@ -1,0 +1,31 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Night Green Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="#1B4332" stroke="#2D6A4F" stroke-width="3"/>
+  
+  <!-- CEF Text -->
+  <text x="100" y="125" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="#74C69D">
+    CEF
+  </text>
+  
+  <!-- Subtext - Context Engineering -->
+  <text x="100" y="155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#B7E4C7" opacity="0.9">
+    CONTEXT ENGINEERING
+  </text>
+  
+  <!-- Decorative Graph Network Pattern -->
+  <g opacity="0.3" stroke="#52B788" stroke-width="2" fill="none">
+    <!-- Network nodes -->
+    <circle cx="50" cy="50" r="4" fill="#74C69D"/>
+    <circle cx="150" cy="50" r="4" fill="#74C69D"/>
+    <circle cx="50" cy="150" r="4" fill="#74C69D"/>
+    <circle cx="150" cy="150" r="4" fill="#74C69D"/>
+    
+    <!-- Network connections -->
+    <line x1="50" y1="50" x2="150" y2="50"/>
+    <line x1="50" y1="50" x2="50" y2="150"/>
+    <line x1="150" y1="50" x2="150" y2="150"/>
+    <line x1="50" y1="150" x2="150" y2="150"/>
+    <line x1="50" y1="50" x2="150" y2="150"/>
+    <line x1="150" y1="50" x2="50" y2="150"/>
+  </g>
+</svg>
