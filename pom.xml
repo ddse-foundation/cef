@@ -7,17 +7,32 @@
 
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>beta-0.5</version>
     <packaging>pom</packaging>
 
     <name>CEF - Context Engineering Framework</name>
-    <description>Domain-agnostic Context Engineering Framework for LLM applications</description>
+    <description>ORM for LLM Context Engineering - Dual persistence framework for knowledge models</description>
     <inceptionYear>2024</inceptionYear>
+    
+    <url>https://ddse-foundation.github.io/</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <developers>
         <developer>
-            <name>mrmanna</name>
-            <organization>DDSE</organization>
+            <name>Mahmudur R Manna</name>
+            <email>mrmanna@ddse-foundation.org</email>
+            <organization>DDSE Foundation</organization>
+            <organizationUrl>https://ddse-foundation.github.io/</organizationUrl>
+            <roles>
+                <role>Founder and Principal Architect</role>
+            </roles>
         </developer>
     </developers>
 

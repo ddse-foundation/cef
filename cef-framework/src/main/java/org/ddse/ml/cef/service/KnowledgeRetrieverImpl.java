@@ -45,15 +45,18 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
     private final ChunkStore chunkStore;
     private final EmbeddingModel embeddingModel;
     private final CefProperties properties;
+    private final PatternExecutor patternExecutor;
 
     public KnowledgeRetrieverImpl(GraphStore graphStore,
             ChunkStore chunkStore,
             EmbeddingModel embeddingModel,
-            CefProperties properties) {
+            CefProperties properties,
+            PatternExecutor patternExecutor) {
         this.graphStore = graphStore;
         this.chunkStore = chunkStore;
         this.embeddingModel = embeddingModel;
         this.properties = properties;
+        this.patternExecutor = patternExecutor;
     }
 
     @Override
@@ -63,6 +66,12 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
         log.debug("Retrieving context for request: {}", request);
 
         List<String> semanticKeywords = request.semanticKeywords() != null ? request.semanticKeywords() : List.of();
+
+        // Pattern-based traversal if patterns are provided
+        if (request.graphQuery() != null && request.graphQuery().usePatternsForTraversal()) {
+            log.info("Using PATTERN_BASED_TRAVERSAL strategy");
+            return executePatternBasedRetrieval(request, startTime);
+        }
 
         if (hasGraphTargets(request)) {
             // Vector-first resolution of targets, then hybrid retrieval
@@ -395,6 +404,78 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
         merged.addAll(outOfContext);
 
         return merged.stream().limit(topK).toList();
+    }
+
+    /**
+     * Execute pattern-based retrieval: run graph patterns, extract nodes, then get
+     * linked chunks.
+     */
+    private Mono<RetrievalResult> executePatternBasedRetrieval(RetrievalRequest request, long startTime) {
+        org.ddse.ml.cef.dto.GraphQuery graphQuery = request.graphQuery();
+
+        // First, resolve entry points from targets
+        return resolveEntryPoints(graphQuery, request.topK())
+                .flatMap(entryPoints -> {
+                    if (entryPoints.isEmpty()) {
+                        log.warn("No entry points resolved for patterns. Falling back to vector search.");
+                        return vectorOnly(request.query(),
+                                request.semanticKeywords() != null ? request.semanticKeywords() : List.of(),
+                                request.topK());
+                    }
+
+                    log.info("Resolved {} entry points for pattern execution", entryPoints.size());
+
+                    // Execute patterns
+                    Set<UUID> entrySet = new HashSet<>(entryPoints);
+                    org.ddse.ml.cef.dto.RankingStrategy ranking = graphQuery.rankingStrategy() != null
+                            ? graphQuery.rankingStrategy()
+                            : org.ddse.ml.cef.dto.RankingStrategy.PATH_LENGTH;
+
+                    return Flux.fromIterable(graphQuery.patterns())
+                            .flatMap(pattern -> Mono.fromCallable(
+                                    () -> patternExecutor.executePattern(pattern, entrySet, request.topK(), ranking)))
+                            .flatMapIterable(list -> list)
+                            .collectList()
+                            .flatMap(matchedPaths -> {
+                                if (matchedPaths.isEmpty()) {
+                                    log.warn("Pattern execution returned no paths. Falling back to vector search.");
+                                    return vectorOnly(request.query(),
+                                            request.semanticKeywords() != null ? request.semanticKeywords() : List.of(),
+                                            request.topK());
+                                }
+
+                                log.info("Pattern execution found {} paths", matchedPaths.size());
+
+                                // Extract all node IDs from matched paths
+                                Set<UUID> nodeIds = matchedPaths.stream()
+                                        .flatMap(path -> path.nodeIds().stream())
+                                        .collect(Collectors.toSet());
+
+                                log.info("Extracting {} unique nodes from matched paths", nodeIds.size());
+
+                                // Get nodes and edges from graph
+                                return graphStore.extractSubgraph(new ArrayList<>(nodeIds), 0) // depth=0, we already
+                                                                                               // have the nodes
+                                        .flatMap(subgraph -> {
+                                            // Get chunks linked to these nodes
+                                            return Flux.fromIterable(nodeIds)
+                                                    .flatMap(nodeId -> chunkStore.findByLinkedNodeId(nodeId))
+                                                    .collectList()
+                                                    .map(chunks -> {
+                                                        log.info("Found {} chunks linked to pattern nodes",
+                                                                chunks.size());
+                                                        RetrievalResult result = new RetrievalResult(
+                                                                subgraph.getNodes(),
+                                                                subgraph.getEdges(),
+                                                                chunks,
+                                                                RetrievalResult.RetrievalStrategy.HYBRID);
+                                                        result.setRetrievalTimeMs(
+                                                                System.currentTimeMillis() - startTime);
+                                                        return result;
+                                                    });
+                                        });
+                            });
+                });
     }
 
     private boolean hasGraphTargets(RetrievalRequest request) {

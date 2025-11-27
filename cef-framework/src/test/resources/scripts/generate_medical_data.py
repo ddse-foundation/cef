@@ -108,6 +108,46 @@ def generate_data():
         })
         med_map[med["name"]] = node_id
 
+    # 1a. Create chunks for Conditions
+    for cond in CONDITIONS:
+        cond_id = condition_map[cond["name"]]
+        chunk_text = f"""**CONDITION PROFILE**
+Name: {cond['name']}
+ICD-10 Code: {cond['icd10']}
+Common Symptoms: {', '.join(cond['symptoms'])}
+Risk Factors: {', '.join(cond['risk_factors'])}
+Contraindicated Medications: {', '.join(cond['contraindications'])}
+"""
+        chunks.append({
+            "id": str(uuid.uuid4()),
+            "content": chunk_text.strip(),
+            "linkedNodeId": cond_id,
+            "metadata": {
+                "type": "condition_profile",
+                "icd10": cond['icd10']
+            }
+        })
+
+    # 1b. Create chunks for Medications
+    for med in MEDICATIONS:
+        med_id = med_map[med["name"]]
+        chunk_text = f"""**MEDICATION PROFILE**
+Name: {med['name']}
+Drug Class: {med['class']}
+Indication: {med['treats']}
+Available Dosages: {', '.join(med['dosage'])}
+Common Side Effects: {', '.join(med['side_effects'])}
+"""
+        chunks.append({
+            "id": str(uuid.uuid4()),
+            "content": chunk_text.strip(),
+            "linkedNodeId": med_id,
+            "metadata": {
+                "type": "medication_profile",
+                "drug_class": med['class']
+            }
+        })
+
     # 2. Create Interaction Edges (Knowledge Model Rules)
     for cond in CONDITIONS:
         cond_id = condition_map[cond["name"]]
@@ -143,6 +183,23 @@ def generate_data():
         })
         doctor_ids.append(doc_id)
         doctors.append({"id": doc_id, "code": doc_code})
+        
+        # Create chunk for Doctor
+        doc_chunk_text = f"""**PROVIDER PROFILE**
+Provider ID: {doc_code}
+Specialty: {specialty}
+Years of Experience: {random.randint(5, 35)}
+Board Certified: Yes
+"""
+        chunks.append({
+            "id": str(uuid.uuid4()),
+            "content": doc_chunk_text.strip(),
+            "linkedNodeId": doc_id,
+            "metadata": {
+                "type": "provider_profile",
+                "specialty": specialty
+            }
+        })
 
     # 4. Create Patients and Clinical Data (Anonymized & Behavioral)
     for i in range(NUM_PATIENTS):

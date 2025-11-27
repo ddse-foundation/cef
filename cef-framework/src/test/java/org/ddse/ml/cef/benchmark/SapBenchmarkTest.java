@@ -20,7 +20,8 @@ class SapBenchmarkTest extends BenchmarkBase {
 
     @BeforeEach
     void setup() throws IOException {
-        // Reset shared stores loaded by MedicalDataTestBase so the SAP dataset stands alone
+        // Reset shared stores loaded by MedicalDataTestBase so the SAP dataset stands
+        // alone
         graphStore.clear().block();
         chunkStore.deleteAll().block();
 
@@ -30,27 +31,41 @@ class SapBenchmarkTest extends BenchmarkBase {
 
     @Test
     @DisplayName("Generate SAP Benchmark Report")
-        void generateSapBenchmarkReport() throws IOException {
+    void generateSapBenchmarkReport() throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(REPORT_FILE))) {
             writeHeader(writer, "Knowledge Model vs. Vector Retrieval Benchmark (SAP)",
-                "Enterprise ERP (Financial & Supply Chain)",
-                "This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on SAP ERP scenarios that require temporal reasoning and supply-chain awareness.");
+                    "Enterprise ERP (Financial & Supply Chain)",
+                    "This report compares the effectiveness of **Vector-Only (Naive RAG)** versus **Knowledge Model (Graph RAG)** retrieval strategies on SAP ERP scenarios that require temporal reasoning and supply-chain awareness.");
 
-            // Scenario 1: Shadow IT Detection
+            // Scenario 1: Multi-Hop Budget Compliance Violation
             runScenario(writer,
-                "1. Shadow IT Detection",
-                "Analyze the 'Software Subscription' spend trend for the Engineering department over the last 4 quarters. Flag any vendors with increasing costs that do not have a corresponding budget entry.",
-                "Analyze spend trend for Engineering department and flag suspicious vendors",
-                "CostCenter", "INCURRED_BY", "PAID_TO");
+                    "1. Shadow IT Budget Leak Detection",
+                    "Find invoices paid to vendors NOT in approved budget, where the vendor supplies components used by Engineering, AND those components are used in projects with cost overruns (requires: Invoice→Vendor→Component→Project→Department→Budget→ApprovedVendors).",
+                    "Find Engineering invoices to unapproved vendors supplying overrun projects",
+                    "Invoice", "PAID_TO", "SUPPLIES", "USED_IN", "BELONGS_TO", "HAS_BUDGET");
 
-            // Scenario 2: Typhoon Impact on Holiday Laptop Delivery
+            // Scenario 2: Cascading Supply Chain Impact
             runScenario(writer,
-                "2. Typhoon Impact: Holiday Laptop Delivery",
-                "A Typhoon has hit Taiwan for 3 days. Visualize the impact on the 'Holiday Laptop' delivery schedule.",
-                "Impact of Typhoon in Taiwan on Holiday Laptop delivery",
-                "Material", "COMPOSED_OF", "SUPPLIED_BY", "LOCATED_IN", "AFFECTS_LOCATION");
+                    "2. Transitive Supply Chain Disruption",
+                    "Find ALL products affected by Taiwan typhoon through multi-tier supply chain: Typhoon→Location→Vendor→Component→SubAssembly→Product→CustomerOrder (requires 6-hop traversal to find downstream impact).",
+                    "Find all customer orders affected by Taiwan typhoon via supply chain cascade",
+                    "Location", "AFFECTED_BY", "LOCATED_IN", "SUPPLIED_BY", "COMPONENT_OF", "USED_IN", "ORDERED_IN");
+
+            // Scenario 3: Hidden Vendor Concentration Risk
+            runScenario(writer,
+                    "3. Transitive Vendor Single Point of Failure",
+                    "Identify products dependent on Taiwan Semi through hidden chains: Product→Component→Subcomponent→RawMaterial→Supplier→Vendor, where Vendor=TSMC but product documentation only lists Component (requires 5-hop to discover hidden dependency).",
+                    "Find products with hidden transitive dependencies on Taiwan Semi",
+                    "Product", "COMPOSED_OF", "CONTAINS", "MADE_FROM", "SUPPLIED_BY");
+
+            // Scenario 4: Cross-Department Financial Contagion
+            runScenario(writer,
+                    "4. Cost Center Contagion Analysis",
+                    "Find cost centers at risk due to shared vendor dependencies: Department1→CostCenter1→Vendor→Component→UsedBy→Project→FundedBy→Department2→HasOverrun (requires detecting risk propagation across department boundaries via shared vendors).",
+                    "Find departments at financial risk via shared vendor dependencies with overrun departments",
+                    "Department", "HAS_COST_CENTER", "PAYS", "SUPPLIES", "USED_IN", "FUNDED_BY", "HAS_OVERRUN");
 
             logger.info("SAP Benchmark report generated at: " + REPORT_FILE);
         }
-        }
+    }
 }

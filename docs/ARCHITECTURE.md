@@ -1,53 +1,57 @@
 # Context Engineering Framework (CEF) - Architecture
 
-**Version:** 2.0  
-**Status:** Production-Ready  
-**Date:** November 24, 2025  
+**Version:** beta-0.5  
+**Status:** Beta Release (Production-Ready with Tested Configurations)  
+**Date:** November 27, 2025  
 **Target Audience:** AI Conference - Technical Experts
 
 ---
 
 ## Executive Summary
 
-**Context Engineering Framework (CEF)** is a domain-agnostic Java framework for building production-grade LLM applications with **graph-augmented retrieval**. It combines structured knowledge graphs with vector search to provide contextually rich, reasoning-based retrieval for Large Language Models.
+**Context Engineering Framework (CEF)** is a domain-agnostic Java ORM for building production-grade LLM applications with **knowledge model persistence**. Just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores (graph + vector) for LLM context.
 
 ### Key Innovation
 
-**Graph Reasoning → Vector Search → Keyword Fallback**
+**Relationship Navigation → Semantic Search → Keyword Fallback**
 
-CEF enhances traditional RAG (Retrieval-Augmented Generation) by traversing entity relationships to extract semantic context, automatically falling back through three retrieval strategies to ensure zero-result failures never occur.
+CEF provides an ORM layer for context engineering - define knowledge models (entities, relationships), persist them to dual stores, and query context through intelligent assembly strategies that automatically fall back to ensure comprehensive results.
 
 ### Core Differentiators
 
-| Feature | Traditional RAG | CEF Framework |
-|---------|----------------|---------------|
-| **Retrieval** | Pure vector similarity | Graph reasoning + vector + keyword |
-| **Context** | Random chunks | Relationship-aware context |
-| **Fallback** | Manual | Automatic 3-level |
-| **Schema** | Rigid (LangChain, LlamaIndex) | Domain-agnostic |
-| **Storage** | Vendor lock-in | Pluggable (JGraphT, Neo4j, Qdrant, Pinecone) |
-| **LLM Integration** | Basic | MCP tool with dynamic schema injection |
-| **Scale** | 10K-1M docs | 100K nodes (JGraphT) to millions (Neo4j) |
+| Feature | RDBMS ORM (Hibernate) | Knowledge Model ORM (CEF) |
+|---------|----------------------|---------------------------|
+| **Data Model** | Tables, columns, foreign keys | Nodes, edges, semantic relations |
+| **Persistence** | Single database | Dual (graph + vector stores) |
+| **Query Strategy** | SQL optimization | Relationship navigation + semantic search |
+| **Context** | Transactional data | Knowledge context for LLMs |
+| **Fallback** | Query rewrite | 3-level automatic (relation → semantic → keyword) |
+| **Schema** | JPA annotations | Domain-agnostic Node/Edge model |
+| **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (JGraphT, Neo4j, Qdrant, Pinecone) |
+| **Scale** | Millions of rows | 100K nodes (JGraphT, tested) / millions (Neo4j, untested) |
 
 ---
 
 ## Problem Statement
 
-### Challenges with Traditional RAG
+### Why an ORM for Context Engineering?
 
-1. **Semantic Mismatch** - Vector embeddings miss when query phrasing differs from document text
-2. **Lost Context** - Retrieving isolated chunks loses relationship information critical for reasoning
-3. **Zero Results** - Pure vector search fails silently when no semantic match exists
-4. **Entity Blindness** - Cannot reason about structured entities (Patient → Condition → Treatment)
-5. **Vendor Lock-In** - Tightly coupled to specific vector databases or graph databases
+**Just as developers needed Hibernate to abstract RDBMS complexity for transactional data, LLM applications need an ORM to abstract knowledge stores for context engineering.**
 
-### What CEF Solves
+1. **Knowledge Models ≠ Data Models** - LLM context requires semantic relationships, not just foreign keys
+2. **Dual Persistence Complexity** - Managing graph stores (relationships) + vector stores (semantics) is error-prone
+3. **No Standard Patterns** - Every project reinvents persistence, caching, and query optimization
+4. **Entity-Relationship Reasoning** - LLMs need to navigate "Patient → Condition → Treatment" relationships
+5. **Storage Flexibility** - Development (in-memory) to production (Neo4j, Qdrant) without code changes
 
-✅ **Graph-Augmented Retrieval** - Traverse relationships to gather contextually relevant information  
-✅ **Automatic Fallback** - Hybrid → Vector → Keyword ensures graceful degradation  
-✅ **Entity-Aware Queries** - LLM constructs queries with entity hints (e.g., "John's conditions")  
-✅ **Domain Agnostic** - Framework knows nothing about your domain (medical, legal, finance)  
-✅ **Pluggable Storage** - Swap JGraphT, Neo4j, Postgres, Qdrant, Pinecone via config  
+### What CEF Provides
+
+✅ **Knowledge Model ORM** - Define entities (Node) and relationships (Edge) like JPA @Entity  
+✅ **Dual Persistence** - Transparent management of graph + vector stores  
+✅ **Intelligent Context Assembly** - Relationship navigation with automatic fallback strategies  
+✅ **Domain Agnostic** - Framework provides primitives, you define semantics  
+✅ **Pluggable Storage** - Swap backends via configuration (JGraphT, Neo4j, Postgres, Qdrant, Pinecone)  
+✅ **Production Patterns** - Caching, lifecycle hooks, batch operations, monitoring  
 
 ---
 
@@ -627,40 +631,43 @@ public class CefHealthIndicator implements HealthIndicator {
 
 ## Comparison with Existing Solutions
 
+### vs. Traditional Data ORMs (Hibernate/JPA)
+
+| Aspect | Hibernate/JPA | CEF Framework |
+|--------|--------------|---------------|
+| **Purpose** | Transactional data persistence | Knowledge context persistence |
+| **Data Model** | Tables, columns, FK constraints | Nodes, edges, semantic relations |
+| **Storage** | Single RDBMS | Dual (graph + vector stores) |
+| **Query Approach** | SQL (structured) | Relationship navigation + semantic search |
+| **Caching** | L1/L2 cache | L1/L2 cache (planned) |
+| **Lifecycle Hooks** | @PrePersist, @PostLoad | Planned |
+| **Batch Operations** | StatelessSession | Batch indexing |
+| **Domain Focus** | Business entities | Knowledge entities for LLMs |
+
 ### vs. LangChain/LlamaIndex
 
 | Aspect | LangChain/LlamaIndex | CEF Framework |
 |--------|---------------------|---------------|
+| **Paradigm** | Document processing | ORM for knowledge models |
 | **Language** | Python-first | Java/Spring |
-| **Graph Reasoning** | Limited (embeddings only) | Native (JGraphT/Neo4j) |
-| **Retrieval Strategy** | Pure RAG | Graph + Vector + Keyword |
-| **Fallback** | Manual | Automatic 3-level |
-| **Domain Model** | Document-centric | Entity + Document |
-| **Storage** | Vendor-specific | Pluggable interface |
-| **MCP Integration** | Basic | Dynamic schema injection |
+| **Relationships** | Limited | First-class (like JPA @OneToMany) |
+| **Context Assembly** | Vector similarity only | Relationship navigation + semantic |
+| **Persistence** | Manual | Declarative (like JPA) |
+| **Domain Model** | Document-centric | Entity-relationship model |
+| **Storage** | Vendor-specific | Pluggable (like JDBC drivers) |
 | **Enterprise** | Limited | Spring Boot ecosystem |
 
 ### vs. Neo4j + Vector Search
 
 | Aspect | Neo4j Alone | CEF Framework |
 |--------|-------------|---------------|
-| **Vendor Lock-In** | Yes (Neo4j required) | No (pluggable) |
-| **Vector Search** | Addon | First-class |
-| **Automatic Fallback** | No | Yes |
-| **Small Projects** | Overkill | Suitable (JGraphT) |
-| **Scale** | Millions+ nodes | 10K-1M+ (configurable) |
+| **Abstraction Level** | Database | ORM framework |
+| **Vendor Lock-In** | Yes (Neo4j required) | No (pluggable like Hibernate) |
+| **Vector Search** | Plugin/addon | First-class dual persistence |
+| **Small Projects** | Overkill | Suitable (in-memory JGraphT) |
+| **ORM Features** | None | Caching, lifecycle hooks, batch ops |
+| **Scale** | Millions+ nodes | 10K-1M+ (configurable backend) |
 | **Cost** | $$$ (enterprise) | $ (open source default) |
-
-### vs. Pure Vector Databases (Qdrant, Pinecone)
-
-| Aspect | Qdrant/Pinecone | CEF Framework |
-|--------|-----------------|---------------|
-| **Graph Reasoning** | None | Core feature |
-| **Entity Relationships** | No | Yes |
-| **Structured Data** | Limited | Native |
-| **Fallback** | None | BM25 keyword |
-| **Domain Agnostic** | Yes | Yes |
-| **Cost** | $$ (cloud/hosted) | $ (self-hosted option) |
 
 ---
 
@@ -764,7 +771,7 @@ Benefit: "Products for user Z" combines graph + vector for hybrid recommendation
 
 ## References
 
-- **Source Code:** [github.com/jugbd/cef](https://github.com/jugbd/cef) *(placeholder)*
+- **DDSE Foundation:** [https://ddse-foundation.github.io/](https://ddse-foundation.github.io/)
 - **Documentation:** [docs/ADR-002.md](./ADR-002.md), [docs/requirements.md](./requirements.md)
 - **Related Research:**
   - GraphRAG (Microsoft Research, 2024)
@@ -779,8 +786,8 @@ Benefit: "Products for user Z" combines graph + vector for hybrid recommendation
 ---
 
 **Document Version:** 2.0  
-**Last Updated:** November 24, 2025  
-**Authors:** CEF Project Team  
-**Contact:** [JUGBD - Java User Group Bangladesh]
+**Last Updated:** November 27, 2025  
+**Author:** Mahmudur R Manna (mrmanna) - Founder and Principal Architect, DDSE Foundation  
+**Organization:** [DDSE Foundation](https://ddse-foundation.github.io/) (Decision-Driven Software Engineering)
 
-**License:** Apache 2.0 *(to be confirmed)*
+**License:** MIT License - Copyright (c) 2024-2025 DDSE Foundation

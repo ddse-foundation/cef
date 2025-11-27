@@ -65,4 +65,8 @@ secrets/
 # Test
 *.test
 coverage/
-
+.venv/
+.idea/  
+.vscode/
+.mvn/
+venv/

@@ -1,24 +1,25 @@
 # Context Engineering Framework (CEF)
 
-**Production-ready Spring Boot framework for domain-agnostic context engineering with hybrid graph + vector retrieval.**
+**Production-ready ORM for LLM Context Engineering - Hibernate for Knowledge Models**
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![Java](https://img.shields.io/badge/Java-17-blue)]()
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 ## Overview
 
-CEF is a production-grade Java framework that combines **knowledge graphs** and **vector search** to provide LLMs with rich, structured context. Unlike domain-specific solutions, CEF is completely framework-agnostic - you define your domain model, and CEF handles the rest.
+CEF is a **production-grade ORM for LLM context engineering** - just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores for LLM context. Unlike domain-specific solutions, CEF is completely framework-agnostic - you define your knowledge models (entities, relationships), and CEF handles persistence, caching, and intelligent context assembly.
 
 ### Key Features
 
-✅ **Hybrid Retrieval**: 3-level fallback strategy (graph-only → hybrid → vector-only)  
-✅ **Pluggable Architecture**: Swap graph stores (JGraphT/Neo4j) and vector stores (Postgres/Qdrant/Pinecone)  
+✅ **ORM for Knowledge Models**: Define entities (Node) and relationships (Edge) like JPA @Entity  
+✅ **Dual Persistence**: Graph store (relationships) + Vector store (semantics)  
+✅ **Intelligent Context Assembly**: 3-level strategy (relationship navigation → semantic → keyword)  
+✅ **Pluggable Storage**: Swap graph stores (JGraphT/Neo4j) and vector stores (Postgres/Qdrant/Pinecone)  
 ✅ **MCP Tool Integration**: Dynamic schema injection for LLM tool calling  
 ✅ **Reactive & Scalable**: Built on R2DBC for non-blocking I/O  
 ✅ **Spring Boot Native**: Auto-configuration, dependency injection, standard patterns  
-✅ **Production Ready**: Batch indexing, error resilience, monitoring
+✅ **Beta Release**: Tested with vLLM, Ollama, DuckDB, JGraphT (see KNOWN_ISSUES.md)
 
 ## Architecture
 
@@ -62,9 +63,11 @@ CEF is a production-grade Java framework that combines **knowledge graphs** and 
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>beta-0.5</version>
 </dependency>
 ```
+
+> **Beta Release:** Tested with DuckDB, vLLM (Qwen3-Coder-30B), and Ollama (nomic-embed-text 768d). See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ### 2. Configure `application.yml`
 
@@ -104,28 +107,28 @@ List<RelationType> types = List.of(
 indexer.initialize(types).block();
 ```
 
-### 4. Index Data
+### 4. Persist Knowledge Models
 
 ```java
-// Index nodes
+// Persist entity (like EntityManager.persist)
 Node doctor = new Node(null, "Doctor", 
     Map.of("name", "Dr. Smith"), 
     "Dr. Smith is a cardiologist");
 indexer.indexNode(doctor).block();
 
-// Index edges
+// Persist relationship (like cascading @OneToMany)
 Edge treats = new Edge(null, "TREATS", 
     doctorId, patientId, null, 1.0);
 indexer.indexEdge(treats).block();
 
-// Index text chunks (auto-embedding)
+// Persist vectorizable content (dual persistence)
 Chunk chunk = new Chunk(null, 
     "Patient has chest pain...", 
     null, patientId, Map.of("source", "notes"));
 indexer.indexChunk(chunk).block();
 ```
 
-### 5. Retrieve Context
+### 5. Query Context
 
 ```java
 // Via MCP Tool (for LLM integration)
@@ -138,26 +141,27 @@ String context = mcpTool.invoke(request).block();
 RetrievalResult result = retriever.retrieve(request).block();
 ```
 
-## Retrieval Strategies
+## Context Assembly Strategies
 
-CEF automatically selects the optimal strategy:
+CEF automatically selects the optimal strategy (like query optimizer in RDBMS):
 
-### 1. **Graph-Only** (when graphHints provided)
+### 1. **Relationship Navigation** (when entity hints provided)
 ```java
 GraphHints hints = new GraphHints();
 hints.setStartNodeLabels(List.of("Doctor"));
 hints.setRelationTypes(List.of("TREATS"));
 request.setGraphHints(hints);
 ```
+Traverses relationships (like JOIN operations) to gather related entities.
 
-### 2. **Hybrid** (default)
-- Semantic search for top-k chunks
-- Get linked nodes from chunks
-- Extract k-hop subgraph around nodes
-- Return combined context
+### 2. **Hybrid Assembly** (default)
+- Semantic search for relevant content
+- Navigate to linked entities
+- Extract relationship subgraph
+- Assemble combined context
 
-### 3. **Vector-Only** (fallback)
-- Pure semantic search when graph is empty
+### 3. **Semantic Fallback**
+- Pure semantic search when no relationship hints available
 
 ## Production Features
 
@@ -229,14 +233,23 @@ The framework provides a dynamic MCP tool schema that adapts to configuration:
 }
 ```
 
-## Example: Medical Domain
+## Proven in Production-Scale Tests
 
-See `cef-example` module for complete working example:
+**Medical Domain:** 177 nodes (patients, conditions, medications, doctors), 455 relationships  
+**Financial Domain:** SAP-simulated enterprise data (vendors, materials, invoices)
+
+**Benchmark Results:** Knowledge Model retrieves 60-220% more relevant content than vector-only approaches.
 
 ```bash
-cd cef-example
-mvn spring-boot:run
+# Run comprehensive test suite
+cd cef-framework
+mvn test
+
+# View results
+cat target/surefire-reports/org.ddse.ml.cef.benchmark.MedicalBenchmarkTest.txt
 ```
+
+See [docs/EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.
 
 ## Performance Characteristics
 
@@ -290,39 +303,60 @@ CREATE TABLE chunks (
 CREATE INDEX ON chunks USING hnsw (embedding vector_cosine_ops);
 ```
 
-## Comparison vs Alternatives
+## Comparison: ORM Paradigm
 
-| Feature | CEF | LangChain | LlamaIndex | Neo4j+RAG |
-|---------|-----|-----------|------------|-----------|
-| Language | Java/Spring | Python | Python | Any |
-| Graph + Vector | ✅ Hybrid | ❌ Separate | ❌ Separate | ✅ Plugin |
-| Domain-agnostic | ✅ | ❌ | ❌ | ✅ |
-| Production-ready | ✅ | ⚠️ | ⚠️ | ✅ |
-| Pluggable storage | ✅ | ❌ | ❌ | ⚠️ |
-| MCP native | ✅ | ❌ | ❌ | ❌ |
-| Spring Boot | ✅ | ❌ | ❌ | ❌ |
+| Feature | CEF (Knowledge ORM) | Hibernate (Data ORM) | LangChain/LlamaIndex |
+|---------|---------------------|----------------------|----------------------|
+| Language | Java/Spring | Java/Spring | Python |
+| Domain Model | Knowledge entities | Data entities | Document-centric |
+| Persistence | Dual (Graph + Vector) | Single (RDBMS) | Vector only |
+| Relationships | First-class | First-class | Limited |
+| Caching | L1/L2 support | L1/L2 support | Manual |
+| Querying | Relationship navigation | JPQL/Criteria | Similarity search |
+| Lifecycle Hooks | @PrePersist, etc. | @PrePersist, etc. | None |
+| Transaction Support | Reactive | Standard | None |
+| Schema Evolution | Migrations | Migrations | Manual |
+| Production Ready | ✅ | ✅ | ⚠️ |
 
 ## Documentation
 
+- [User Guide](USER_GUIDE.md) - Complete ORM integration guide
+- [Release Notes](RELEASE_NOTES.md) - Version beta-0.5 details
+- [Known Issues](KNOWN_ISSUES.md) - Testing status and limitations
+- [Quick Start](QUICKSTART.md) - Get started in 5 minutes
 - [Architecture Deep Dive](docs/ARCHITECTURE.md)
-- [ADR-002: Technical Design](docs/ADR-002.md)
+- [Technical Design](docs/ADR-002.md)
 - [Requirements](docs/requirements.md)
-- [Implementation Plan](docs/IDR-002.md)
 
 ## Contributing
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions welcome! We especially need:
+
+- Testing untested configurations (PostgreSQL, OpenAI, Neo4j, Qdrant)
+- Performance benchmarking at scale
+- Documentation improvements
+- Bug reports with reproduction steps
+
+See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for areas needing validation.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT License
+
+Copyright (c) 2024-2025 DDSE Foundation
+
+See [LICENSE](LICENSE) file for full license text.
 
 ## Authors
 
-- **mrmanna** - *Initial work*
+- **Mahmudur R Manna (mrmanna)** - Founder and Principal Architect, [DDSE Foundation](https://ddse-foundation.github.io/)
+
+## About DDSE Foundation
+
+Developed by the **DDSE Foundation** (Decision-Driven Software Engineering), this framework represents our commitment to principled software architecture and open-source innovation.
 
 ## Acknowledgments
 
 - Built with Spring Boot, Spring AI, JGraphT, pgvector
-- Inspired by Neo4j GraphRAG, LangChain, and LlamaIndex
-- Presented at AI Conference 2025
+- Inspired by production ORM patterns from Hibernate/JPA
+- Community-driven open source from DDSE Foundation

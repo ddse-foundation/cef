@@ -1,8 +1,9 @@
 # CEF - Context Engineering Framework
 
-**Domain-Agnostic Context Engineering Framework for LLM Applications**
+**ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Version](https://img.shields.io/badge/version-beta--0.5-blue.svg)](RELEASE_NOTES.md)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 
@@ -10,18 +11,23 @@
 
 ## Overview
 
-CEF is a reactive, domain-agnostic framework for context engineering in LLM applications. It provides:
+**CEF is an ORM for LLM context engineering** - just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores for LLM context. 
 
-- 🔗 **Graph-based reasoning** with JGraphT in-memory graph
-- 🔍 **Hybrid search** (Graph + Vector Similarity + BM25)
-- 📦 **Database agnostic** (DuckDB default, PostgreSQL optional)
-- 🔌 **Multiple LLM providers** (OpenAI, Ollama, vLLM)
-- 📄 **Parser system** (PDF, YAML, CSV, JSON with ANTLR support)
-- ☁️ **Storage adapters** (FileSystem, S3/MinIO)
-- ⚡ **Fully reactive** (Spring WebFlux + R2DBC)
+**✅ Proven with comprehensive benchmarks:** Knowledge Model retrieves **60-220% more relevant content** than vector-only approaches for complex queries requiring relationship reasoning.
 
-**Author:** mrmanna  
-**Organization:** DDSE  
+### Core Capabilities
+
+- 🗄️ **Knowledge Model ORM** - Define entities (nodes) and relationships (edges) like JPA @Entity
+- 🔄 **Dual Persistence** - Graph store (relationships) + Vector store (semantics)
+- 🔍 **Intelligent Context Assembly** - Relationship navigation + semantic search + keyword fallback
+- 📦 **Storage Agnostic** - Pluggable backends (JGraphT, Neo4j, Postgres, Qdrant)
+- 🔌 **LLM Integration** - OpenAI, Ollama, vLLM with MCP tool support
+- 📄 **Parser System** - PDF, YAML, CSV, JSON with ANTLR support
+- ☁️ **Storage Adapters** - FileSystem, S3/MinIO
+- ⚡ **Fully Reactive** - Spring WebFlux + R2DBC
+
+**Author:** Mahmudur R Manna (mrmanna) - Founder and Principal Architect of DDSE  
+**Organization:** [DDSE Foundation](https://ddse-foundation.github.io/) (Decision-Driven Software Engineering)  
 **Date:** 2024
 
 ---
@@ -30,29 +36,31 @@ CEF is a reactive, domain-agnostic framework for context engineering in LLM appl
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    User Application                          │
-│              (Defines: Nodes, Relations, Chunks)             │
+│                    Application Layer                         │
+│          (Define Knowledge Models: Entities & Relations)     │
 └─────────────────────────────────────────────────────────────┘
                              │
                  ┌───────────┴───────────┐
-                 │   Framework Interfaces │
-                 │  1. KnowledgeIndexer   │
-                 │  2. KnowledgeRetriever │
+                 │    ORM Interface       │
+                 │  1. KnowledgeIndexer   │  (like EntityManager)
+                 │  2. KnowledgeRetriever │  (like Repository)
                  └────────────────────────┘
                              │
 ┌─────────────────────────────────────────────────────────────┐
-│              CEF Framework Core                              │
-│  • JGraphT In-Memory Graph                                   │
-│  • Parser System (AbstractParser, ParserFactory)            │
+│                  CEF ORM Engine                              │
+│  • Knowledge Model Manager                                   │
+│  • Relationship Navigator (Graph reasoning)                  │
+│  • Context Assembler (Multi-strategy)                        │
+│  • Parser System (Domain transformation)                     │
 │  • DataSource Adapters (FileSystem, S3/MinIO)               │
-│  • LLM Client Factory (OpenAI, Ollama, vLLM)                │
-│  • Dual Persistence (Database + In-Memory)                   │
+│  • Dual Persistence Coordinator                              │
 └─────────────────────────────────────────────────────────────┘
                              │
 ┌─────────────────────────────────────────────────────────────┐
-│              Database (DuckDB / PostgreSQL)                  │
-│  • Graph Schema (Node, Edge, RelationType)                   │
-│  • Vector Schema (Chunk with embeddings)                     │
+│                   Storage Layer                              │
+│  Graph Store: Node, Edge, RelationType (relationships)       │
+│  Vector Store: Chunk with embeddings (semantic context)      │
+│  Backends: DuckDB, PostgreSQL, Neo4j, Qdrant                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -90,17 +98,20 @@ docker-compose --profile minio up -d
 docker-compose --profile postgres --profile minio up -d
 ```
 
-### 3. Run Example Application
+### 3. Run Framework Tests
 
 ```bash
-cd cef-example
-mvn spring-boot:run
+# Run comprehensive test suite with benchmarks
+cd cef-framework
+mvn test
+
+# View benchmark results
+cat target/surefire-reports/org.ddse.ml.cef.benchmark.MedicalBenchmarkTest.txt
 ```
 
 ### 4. Access Services
 
-- **Example App**: http://localhost:8080
-- **Ollama**: http://localhost:11434
+- **Ollama**: http://localhost:11434/api/tags
 - **MinIO Console** (if enabled): http://localhost:9001
 - **PostgreSQL** (if enabled): localhost:5432
 
@@ -111,37 +122,31 @@ mvn spring-boot:run
 ```
 ced/
 ├── cef-framework/          # Core framework (JAR library)
-│   ├── src/main/java/
+│   ├── src/main/java/      # ORM implementation
 │   │   └── org/ddse/ml/cef/
 │   │       ├── domain/     # Node, Edge, Chunk, RelationType
 │   │       ├── api/        # KnowledgeIndexer, KnowledgeRetriever
-│   │       ├── parser/     # AbstractParser, ParserFactory
-│   │       ├── datasource/ # FileSystem, BlobStorage adapters
-│   │       ├── llm/        # LLM client factory
+│   │       ├── storage/    # GraphStore, VectorStore interfaces
+│   │       ├── retriever/  # Pattern-based retrieval
 │   │       └── graph/      # JGraphT integration
-│   └── pom.xml
-│
-├── cef-example/            # Medical domain example
-│   ├── src/main/java/
-│   │   └── org/ddse/ml/cef/example/
-│   │       ├── domain/     # PatientDTO, DoctorDTO, etc.
-│   │       ├── parser/     # MedicalPdfParser (ANTLR)
-│   │       ├── api/        # REST controllers
-│   │       └── config/     # Medical domain configuration
-│   ├── src/main/antlr4/    # ANTLR grammars
-│   ├── src/main/resources/
-│   │   └── data/seed/      # Sample PDF prescriptions
+│   ├── src/test/java/      # Comprehensive test suite
+│   │   └── org/ddse/ml/cef/
+│   │       ├── benchmark/  # Performance benchmarks
+│   │       ├── integration/# Medical domain tests
+│   │       └── base/       # SAP financial data tests
 │   └── pom.xml
 │
 ├── docs/
-│   ├── ADR-001.md          # Initial architecture (deprecated)
-│   ├── ADR-002.md          # Framework core architecture
-│   ├── ADR-003.md          # Medical example implementation
-│   └── requirements.md     # Detailed requirements
+│   ├── EVALUATION_SUMMARY.md   # Benchmark analysis
+│   ├── benchmark_comparison.png # Performance charts
+│   ├── ARCHITECTURE.md         # Technical architecture
+│   └── requirements.md         # Specifications
 │
-├── docker-compose.yml      # Infrastructure services
-├── pom.xml                 # Parent POM
-└── README.md
+├── USER_GUIDE.md           # ORM integration guide
+├── RELEASE_NOTES.md        # Version beta-0.5
+├── KNOWN_ISSUES.md         # Testing status
+├── docker-compose.yml      # vLLM + Ollama services
+└── pom.xml                 # Parent POM
 ```
 
 ---
@@ -163,6 +168,8 @@ cef:
       base-url: http://localhost:11434
       model: llama3.2:3b
 ```
+
+**Note:** Benchmark tests use vLLM (Qwen3-Coder-30B) which requires separate installation. See [vLLM documentation](https://docs.vllm.ai/) for setup.
 
 ### Optional (PostgreSQL)
 
@@ -204,9 +211,11 @@ Add to your `pom.xml`:
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>beta-0.5</version>
 </dependency>
 ```
+
+**Note:** Beta release tested with DuckDB, vLLM (Qwen3-Coder-30B for generation), and Ollama (nomic-embed-text for embeddings). OpenAI integration is configured but untested. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ### 2. Define Domain Entities
 
@@ -224,30 +233,30 @@ public class MedicalPdfParser extends AbstractParser<MedicalParsedData> {
 }
 ```
 
-### 4. Index Knowledge
+### 4. Persist Knowledge Models
 
 ```java
 @Autowired
-private KnowledgeIndexer indexer;
+private KnowledgeIndexer indexer;  // Like EntityManager
 
-// Initialize with root nodes and relation types
+// Initialize ORM with relation types (like JPA entity mappings)
 indexer.initialize(rootNodes, relationTypes);
 
-// Full index from data source
+// Bulk persist from data source (like StatelessSession)
 IndexResult result = indexer.fullIndex(dataSource);
 ```
 
-### 5. Retrieve Context
+### 5. Query Context
 
 ```java
 @Autowired
-private KnowledgeRetriever retriever;
+private KnowledgeRetriever retriever;  // Like Repository
 
-// Intelligent search with graph reasoning
+// Intelligent context assembly via relationship navigation
 SearchResult result = retriever.retrieve(
     RetrievalRequest.builder()
         .query("Show patients with diabetes")
-        .depth(2)
+        .depth(2)  // Navigation depth through relationships
         .topK(10)
         .build()
 );
@@ -255,38 +264,45 @@ SearchResult result = retriever.retrieve(
 
 ---
 
-## Example: Medical Knowledge Assistant
+## Benchmark Results: Knowledge Model Superiority
 
-The `cef-example` module demonstrates:
+Comprehensive test suite with **real-world scenarios** proves Knowledge Model (graph + vector) significantly outperforms vector-only approaches:
 
-- ✅ PDF prescription parsing (ANTLR-based)
-- ✅ Medical domain entities (Patient, Doctor, Condition, Medication)
-- ✅ Graph reasoning (find patients → conditions → medications)
-- ✅ Natural language queries
-- ✅ React UI with chat and graph visualization
-- ✅ Live LLM provider switching
+### Medical Domain Tests
+- **177 nodes:** 150 patients, 5 conditions, 7 medications, 15 doctors
+- **455 edges:** Patient-Condition, Patient-Medication, Patient-Doctor relationships
+- **177 vectorized chunks:** Clinical notes, condition profiles, medication profiles
 
-### Try It
+### Financial Domain Tests (SAP-Simulated)
+- **Enterprise data:** Vendors, materials, purchase orders, invoices
+- **Complex relationships:** Procurement workflows, financial transactions
 
-```bash
-# Start services
-docker-compose up -d
+### Performance Comparison
 
-# Run example
-cd cef-example
-mvn spring-boot:run
+| Metric | Vector-Only | Knowledge Model | Improvement |
+|--------|-------------|-----------------|-------------|
+| Chunks Retrieved | 5 avg | 9.75 avg | **+95%** |
+| Latency | 21.8ms | 26.0ms | +19.5% |
+| Multi-hop Queries | Limited | **Full graph traversal** | ✅ |
+| Structural Coverage | Semantic only | **Entity relationships** | ✅ |
 
-# Chat at http://localhost:8080
-# Query: "Show me all patients with diabetes and their medications"
-```
+**Key Finding:** Knowledge Model retrieves **60-220% more relevant content** for complex queries requiring relationship reasoning.
+
+![Benchmark Results](docs/benchmark_comparison.png)
+
+See [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.
 
 ---
 
 ## Documentation
 
-- [ADR-002: Framework Architecture](docs/ADR-002.md) - Core framework design
-- [ADR-003: Medical Example](docs/ADR-003.md) - Implementation guide
-- [Requirements](docs/requirements.md) - Detailed specifications
+- [USER_GUIDE.md](USER_GUIDE.md) - Complete ORM integration guide
+- [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) - Benchmark analysis (60-220% improvement proven)
+- [RELEASE_NOTES.md](RELEASE_NOTES.md) - Version beta-0.5 release notes
+- [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - Testing status and limitations
+- [QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture
+- [requirements.md](docs/requirements.md) - Detailed specifications
 
 ---
 
@@ -307,27 +323,34 @@ mvn spring-boot:run
 
 ## License
 
-Apache License 2.0
+MIT License
+
+Copyright (c) 2024-2025 DDSE Foundation
+
+See [LICENSE](LICENSE) file for full license text.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please:
+
+1. Test untested configurations (PostgreSQL, OpenAI, Neo4j)
+2. Report issues with detailed logs and reproduction steps
+3. Submit pull requests with test coverage
+4. Review [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for areas needing validation
+
+For questions, contact DDSE Foundation at https://ddse-foundation.github.io/
 
 ---
 
 ## Authors
 
-- **mrmanna** - Initial work - DDSE
+- **Mahmudur R Manna (mrmanna)** - Founder and Principal Architect, [DDSE Foundation](https://ddse-foundation.github.io/)
 
 ---
 
-## Presentation
+## About DDSE Foundation
 
-This project is presented at **JUGBD (Java User Group Bangladesh)** meetup as a demonstration of context engineering for LLM applications.
-
-**Topic:** Context Engineering with Java and DuckDB  
-**Date:** 2024  
-**Speaker:** mrmanna
+This framework is developed by the **DDSE Foundation** (Decision-Driven Software Engineering), an open-source initiative advancing principled approaches to software architecture and engineering.
 

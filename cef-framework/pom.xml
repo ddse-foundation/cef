@@ -8,14 +8,14 @@
     <parent>
         <groupId>org.ddse.ml</groupId>
         <artifactId>cef-parent</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>beta-0.5</version>
     </parent>
 
     <artifactId>cef-framework</artifactId>
     <packaging>jar</packaging>
 
     <name>CEF Framework</name>
-    <description>Core framework for domain-agnostic context engineering</description>
+    <description>ORM for LLM Context Engineering - Core framework for knowledge model persistence</description>
 
     <dependencies>
         <!-- Spring Boot JDBC (for DuckDB blocking wrapper) -->

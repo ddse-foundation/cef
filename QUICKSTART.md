@@ -2,6 +2,8 @@
 
 This guide will help you set up and run the CEF (Context Engineering Framework) project.
 
+**CEF is an ORM for LLM context engineering** - just as Hibernate abstracts databases for transactional data, CEF abstracts knowledge stores for LLM context. You define knowledge models (entities, relationships), and CEF handles persistence, caching, and intelligent context assembly.
+
 ## Prerequisites
 
 - **Java 17 or higher**
@@ -41,27 +43,61 @@ docker-compose up -d
 
 This starts only Ollama. DuckDB will be embedded in the application.
 
-### Step 3: Build and Run
+### Step 3: Build and Test
 
 ```bash
-# Build all modules
+# Build framework
 mvn clean install
 
-# Run the example
-cd cef-example
-mvn spring-boot:run
+# Run comprehensive test suite
+cd cef-framework
+mvn test
+
+# Tests include:
+# - Medical domain: 177 nodes, 455 edges
+# - Financial domain: SAP-simulated data
+# - Benchmarks: Knowledge Model vs Vector-Only
 ```
 
-**Or use the Makefile:**
+### Step 4: Verify Services
 
 ```bash
-make dev
+# Check Ollama is running
+curl http://localhost:11434/api/tags
+
+# Verify test execution
+ls -l cef-framework/target/surefire-reports/
 ```
 
-### Step 4: Verify
+### Step 5: Understanding the ORM Layer
 
-- **Example App**: http://localhost:8080
-- **Ollama**: http://localhost:11434/api/tags
+The test suite demonstrates ORM patterns with real scenarios:
+
+**Medical Domain Test (MedicalBenchmarkTest.java):**
+```java
+// 177 nodes: 150 patients, 5 conditions, 7 medications, 15 doctors
+// 455 edges: Patient-Condition, Patient-Medication, Doctor-Patient
+
+// Pattern-based retrieval (multi-hop reasoning)
+GraphPattern pattern = GraphPattern.multiHop(
+    "Find contraindications",
+    List.of(
+        new TraversalStep("HAS_CONDITION", "*", ...),
+        new TraversalStep("PRESCRIBED_MEDICATION", "*", ...)
+    )
+);
+
+// Result: 120% more chunks than vector-only search
+```
+
+**Financial Domain Test (SapBenchmarkTest.java):**
+```java
+// SAP-simulated data: Vendors, Materials, Invoices
+// Complex procurement workflows
+// Enterprise relationship patterns
+```
+
+See [docs/EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for complete benchmark analysis.
 
 ---
 
@@ -73,9 +109,9 @@ make dev
 docker-compose --profile postgres up -d
 ```
 
-### Step 2: Update Configuration
+### Step 2: Configure Tests for PostgreSQL
 
-Edit `cef-example/src/main/resources/application.yml`:
+Create `cef-framework/src/test/resources/application-postgres.yml`:
 
 ```yaml
 cef:
@@ -91,18 +127,12 @@ spring:
     password: cef_password
 ```
 
-### Step 3: Build and Run
+### Step 3: Run Tests with PostgreSQL
 
 ```bash
 mvn clean install
-cd cef-example
-mvn spring-boot:run
-```
-
-**Or use Makefile:**
-
-```bash
-make dev-postgres
+cd cef-framework
+mvn test -Dspring.profiles.active=postgres
 ```
 
 ---
@@ -117,9 +147,9 @@ For the complete demonstration including blob storage.
 docker-compose --profile postgres --profile minio up -d
 ```
 
-### Step 2: Enable MinIO in Configuration
+### Step 2: Configure Tests for MinIO
 
-Edit `cef-example/src/main/resources/application.yml`:
+Create `cef-framework/src/test/resources/application-minio.yml`:
 
 ```yaml
 cef:
@@ -132,23 +162,17 @@ cef:
     blob-storage:
       enabled: true
       endpoint: http://localhost:9000
-      bucket: medical-documents
+      bucket: test-documents
       access-key: minioadmin
       secret-key: minioadmin
 ```
 
-### Step 3: Build and Run
+### Step 3: Run Tests with MinIO
 
 ```bash
 mvn clean install
-cd cef-example
-mvn spring-boot:run
-```
-
-**Or use Makefile:**
-
-```bash
-make dev-all
+cd cef-framework
+mvn test -Dspring.profiles.active=minio
 ```
 
 ### Step 4: Access Services
@@ -160,64 +184,19 @@ make dev-all
 
 ---
 
-## Makefile Commands
-
-The project includes a Makefile for convenience:
-
-```bash
-# Show all available commands
-make help
-
-# Full development setup
-make dev              # DuckDB + Ollama
-make dev-postgres     # PostgreSQL + Ollama
-make dev-all          # PostgreSQL + MinIO + Ollama
-
-# Docker management
-make docker-up        # Start Ollama only
-make docker-up-postgres  # Start with PostgreSQL
-make docker-up-minio     # Start with MinIO
-make docker-up-all       # Start all services
-make docker-down      # Stop all services
-make docker-clean     # Remove containers and volumes
-make docker-logs      # Show logs
-
-# Build and test
-make build            # Build all modules
-make test             # Run tests
-make clean            # Clean build artifacts
-
-# Run application
-make run              # Run example app
-make quick            # Quick run (skip tests)
-
-# Check services
-make check            # Check if services are running
-
-# Ollama management
-make ollama-pull-llama   # Pull llama3.2 model
-make ollama-pull-nomic   # Pull nomic-embed-text model
-make ollama-list         # List installed models
-
-# Info
-make info             # Show project info
-```
-
----
-
 ## Verify Installation
 
 ### 1. Check Services
 
 ```bash
-make check
-```
+# Check Ollama
+curl http://localhost:11434/api/tags
 
-Expected output:
-```
-✓ Ollama is running
-✓ PostgreSQL is running (optional)
-✓ MinIO is running (optional)
+# Check PostgreSQL (if running)
+docker ps | grep cef-postgres
+
+# Check MinIO (if running)
+docker ps | grep cef-minio
 ```
 
 ### 2. Check Application
@@ -234,10 +213,12 @@ Expected:
 ### 3. Check Ollama Models
 
 ```bash
-make ollama-list
+docker exec -it cef-ollama ollama list
 ```
 
-You should see `llama3.2:3b` listed.
+You should see `nomic-embed-text` listed (used for embeddings in tests).
+
+**Note:** Tests use vLLM with Qwen3-Coder-30B for generation, not Ollama LLMs.
 
 ---
 
@@ -245,24 +226,27 @@ You should see `llama3.2:3b` listed.
 
 ### Ollama Model Not Found
 
-If you get "model not found" errors:
+Tests use Ollama for embeddings only (nomic-embed-text):
 
 ```bash
-# Pull the model manually
-make ollama-pull-llama
-
-# Or directly:
-docker exec -it cef-ollama ollama pull llama3.2:3b
+# Pull embedding model
+docker exec -it cef-ollama ollama pull nomic-embed-text
 ```
+
+**Note:** Tests use vLLM (Qwen3-Coder-30B) for generation, which requires separate installation.
 
 ### Port Already in Use
 
-If port 8080 is already in use:
+If vLLM or Ollama ports are already in use:
 
-Edit `cef-example/src/main/resources/application.yml`:
+Edit test configuration:
 ```yaml
-server:
-  port: 8081  # Change to available port
+spring:
+  ai:
+    openai:
+      base-url: http://localhost:8002  # Change vLLM port
+    ollama:
+      base-url: http://localhost:11435  # Change Ollama port
 ```
 
 ### PostgreSQL Connection Issues
@@ -294,20 +278,26 @@ mvn spring-boot:run
 
 ## Next Steps
 
-1. **Explore the API**
-   - Visit http://localhost:8080/actuator/endpoints
+1. **Review Benchmark Results**
+   - See `docs/EVALUATION_SUMMARY.md` for detailed analysis
+   - View `docs/benchmark_comparison.png` for performance charts
+   - Knowledge Model shows 60-220% improvement over vector-only
 
-2. **Try Example Queries**
-   - See `docs/ADR-003.md` for medical domain examples
+2. **Explore Test Suite**
+   - Medical domain: `cef-framework/src/test/java/org/ddse/ml/cef/benchmark/MedicalBenchmarkTest.java`
+   - Financial domain: `cef-framework/src/test/java/org/ddse/ml/cef/benchmark/SapBenchmarkTest.java`
+   - Real-world patterns and multi-hop reasoning examples
 
-3. **Create Your Own Domain**
-   - Use `cef-example` as a template
-   - Define your own entities and parsers
+3. **Define Your Knowledge Models**
+   - Review `USER_GUIDE.md` for ORM integration patterns
+   - Understand Node (entity) and Edge (relationship) concepts
+   - Study test data generators for reference implementations
 
 4. **Read Documentation**
-   - `docs/ADR-002.md` - Framework architecture
-   - `docs/ADR-003.md` - Example implementation
-   - `docs/requirements.md` - Detailed specs
+   - `USER_GUIDE.md` - Complete ORM integration guide
+   - `docs/ARCHITECTURE.md` - ORM architecture and design
+   - `docs/ADR-002.md` - Technical implementation details
+   - `docs/requirements.md` - ORM philosophy and specifications
 
 ---
 
@@ -347,17 +337,18 @@ If you need to start fresh:
 
 ```bash
 # Stop everything
-make docker-down
+docker-compose down
 
 # Clean build artifacts and data
-make clean
+mvn clean
 rm -rf data/
 
 # Remove docker volumes
-make docker-clean
+docker-compose down -v
 
 # Start fresh
-make dev
+docker-compose up -d
+mvn clean install
 ```
 
 ---

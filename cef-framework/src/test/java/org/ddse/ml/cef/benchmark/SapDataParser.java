@@ -67,6 +67,12 @@ public class SapDataParser {
 
             Node node = new Node(UUID.nameUUIDFromBytes(("VENDOR-" + id).getBytes()), "Vendor", props, null);
             graphStore.addNode(node).block();
+
+            // Create chunk for Vendor
+            String vendorChunk = String.format("**VENDOR MASTER DATA**\nVendor ID: %s\nName: %s\nCity: %s\nCountry: %s",
+                    id, row.get("NAME1"), row.get("ORT01"), row.get("LAND1"));
+            Map<String, Object> vendorMeta = Map.of("type", "vendor_profile", "vendor_id", id);
+            indexChunk(node.getId(), "CHUNK-VENDOR-" + id, vendorChunk, vendorMeta);
         }
     }
 
@@ -83,6 +89,13 @@ public class SapDataParser {
 
             Node node = new Node(UUID.nameUUIDFromBytes(("CC-" + id).getBytes()), "CostCenter", props, null);
             graphStore.addNode(node).block();
+
+            // Create chunk for Cost Center
+            String ccChunk = String.format("**COST CENTER PROFILE**\nCost Center: %s\nName: %s\nDepartment: %s",
+                    id, row.get("KTEXT"), row.get("ABTEI"));
+            Map<String, Object> ccMeta = Map.of("type", "cost_center_profile", "cost_center_id", id, "department",
+                    row.get("ABTEI"));
+            indexChunk(node.getId(), "CHUNK-CC-" + id, ccChunk, ccMeta);
         }
     }
 
@@ -146,6 +159,13 @@ public class SapDataParser {
 
             Node node = new Node(UUID.nameUUIDFromBytes(("MAT-" + id).getBytes()), "Material", props, null);
             graphStore.addNode(node).block();
+
+            // Create chunk for Material
+            String matChunk = String.format("**MATERIAL MASTER DATA**\nMaterial ID: %s\nDescription: %s\nType: %s",
+                    id, row.get("MAKTX"), row.get("MTART"));
+            Map<String, Object> matMeta = Map.of("type", "material_profile", "material_id", id, "material_type",
+                    row.get("MTART"));
+            indexChunk(node.getId(), "CHUNK-MAT-" + id, matChunk, matMeta);
         }
     }
 
@@ -339,7 +359,8 @@ public class SapDataParser {
 
         String materialContent = String.format(Locale.US,
                 "%s %s Lead Time: %s days. Typhoon disruptions in Taiwan extend the Holiday Laptop delivery queue." +
-                        " %s", vendorName,
+                        " %s",
+                vendorName,
                 vendorCity, leadTimeDetail, supplySummary);
 
         Map<String, Object> materialMetadata = new LinkedHashMap<>();

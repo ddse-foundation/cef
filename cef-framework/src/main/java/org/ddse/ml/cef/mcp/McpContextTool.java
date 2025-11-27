@@ -57,9 +57,12 @@ public class McpContextTool implements FunctionCallback {
 
     @Override
     public String getDescription() {
-        return "Retrieve context using Vector-First Resolution. " +
+        return "Retrieve context using Vector-First Resolution with optional Graph Patterns. " +
                 "You MUST provide a 'graphQuery' with 'targets' to resolve specific entities in the Knowledge Graph. " +
-                "The system resolves these targets first, then traverses the graph to enrich vector search results.";
+                "The system resolves these targets first, then traverses the graph to enrich vector search results. " +
+                "For multi-hop structured queries, you can specify 'patterns' in graphQuery to define explicit traversal paths with constraints. "
+                +
+                "Example pattern: Patient->DIAGNOSED_WITH->Disease->TREATED_WITH->Treatment with constraints on properties.";
     }
 
     @Override
@@ -215,6 +218,24 @@ public class McpContextTool implements FunctionCallback {
         traversalProperties.put("maxDepth", Map.of("type", "integer", "description", "Max traversal depth"));
         traversalProp.put("properties", traversalProperties);
         graphQueryProperties.put("traversal", traversalProp);
+
+        // Patterns - optional structured graph patterns
+        Map<String, Object> patternsProp = new HashMap<>();
+        patternsProp.put("type", "array");
+        patternsProp.put("description", "Optional graph patterns for structured multi-hop queries. " +
+                "Each pattern defines a sequence of traversal steps with optional constraints. " +
+                "Example: [{patternId: 'p1', steps: [{sourceLabel: 'Patient', relationType: 'DIAGNOSED_WITH', targetLabel: 'Disease', stepIndex: 0}], constraints: [], description: 'Patient diagnoses'}]");
+        patternsProp.put("items", Map.of("type", "object"));
+        graphQueryProperties.put("patterns", patternsProp);
+
+        // Ranking strategy - optional
+        Map<String, Object> rankingProp = new HashMap<>();
+        rankingProp.put("type", "string");
+        rankingProp.put("description",
+                "Optional ranking strategy for patterns: PATH_LENGTH, EDGE_WEIGHT, NODE_CENTRALITY, SEMANTIC_SCORE, HYBRID");
+        rankingProp.put("enum",
+                java.util.List.of("PATH_LENGTH", "EDGE_WEIGHT", "NODE_CENTRALITY", "SEMANTIC_SCORE", "HYBRID"));
+        graphQueryProperties.put("rankingStrategy", rankingProp);
 
         graphQueryProp.put("properties", graphQueryProperties);
         propertiesMap.put("graphQuery", graphQueryProp);

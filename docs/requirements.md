@@ -1,9 +1,8 @@
 # Context Engineering Framework (CEF) - Requirements
 
 **Project:** Context Engineering Framework (CEF)  
-**Target Audience:** Java Bangladesh (JUGBD) Presentation  
 **Date:** November 24, 2025  
-**Version:** 2.0
+**Version:** beta-0.5
 
 ---
 
@@ -581,12 +580,12 @@ All documents auto-chunked (512 tokens, 50 overlap) and vectorized.
 - **Connection Pool**: Max 20 connections, min 5 idle
 - **Metrics**: Exported to Prometheus/Grafana
 
-### Presentation (JUGBD)
-- ✅ Live demo: Chat about medical data, show graph visualization
-- ✅ Demonstrate DB switching (PostgreSQL → DuckDB)
-- ✅ Demonstrate provider switching (OpenAI → Ollama)
-- ✅ Show reasoning context in graph (how answer was derived)
-- ✅ Attendees can run example locally
+### Comprehensive Test Suite
+- ✅ Medical Domain: 177 nodes (patients, conditions, medications, doctors), 455 edges
+- ✅ Financial Domain: SAP-simulated enterprise data (vendors, materials, invoices)
+- ✅ Benchmark Validation: 60-220% improvement over vector-only search
+- ✅ Multi-hop reasoning: 4 complex scenarios with pattern-based retrieval
+- ✅ Users can reproduce benchmarks with `mvn test`
 
 ---
 
@@ -612,7 +611,7 @@ All documents auto-chunked (512 tokens, 50 overlap) and vectorized.
 | pgvector performance with large datasets | Medium | HNSW indexing, connection pooling, caching |
 | Ollama availability/model size | Low | Bundle models with Docker, fallback to Mock |
 | Graph rendering performance (1000+ nodes) | Medium | Lazy loading, clustering, level-of-detail |
-| Scope creep | High | Strict MVP, defer enhancements to post-JUGBD |
+| Scope creep | High | Strict MVP, defer enhancements to future releases |
 | Cache consistency issues | Medium | Implement proper eviction strategy, use distributed cache for multi-instance |
 | Complex lifecycle hook ordering | Medium | Document execution order, provide debugging tools |
 | Migration conflicts in team development | Low | Use version control for migrations, automated conflict detection |

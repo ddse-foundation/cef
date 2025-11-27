@@ -144,16 +144,17 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
     /**
      * Build GraphQuery from query text and hints array.
      * 
-     * Implements ADR-002's Vector-First Resolution strategy:
+     * Implements ADR-002's Vector-First Resolution strategy with GraphPattern
+     * support:
      * - Uses query text for semantic vector search (finds relevant chunks)
      * - Uses typeHint to filter entry nodes (prevents context explosion)
-     * - Defines traversal relationships for graph exploration
+     * - Creates GraphPattern for structured multi-hop traversal
      * 
      * Format: [targetLabel, relationType1, relationType2, ...]
      * 
      * @param query      Semantic query text for vector-based entry point resolution
      * @param graphHints Array of graph navigation hints
-     * @return GraphQuery with resolution target and traversal hints
+     * @return GraphQuery with resolution target and graph patterns
      */
     private GraphQuery buildGraphQuery(String query, String[] graphHints) {
         if (graphHints == null || graphHints.length == 0) {
@@ -168,7 +169,7 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
                 null // properties
         );
 
-        // Remaining hints are relation types for traversal
+        // Build traversal hint for backward compatibility
         TraversalHint traversal = null;
         if (graphHints.length > 1) {
             List<String> relationTypes = Arrays.asList(Arrays.copyOfRange(graphHints, 1, graphHints.length));
@@ -179,7 +180,40 @@ public abstract class BenchmarkBase extends MedicalDataTestBase {
             );
         }
 
-        return new GraphQuery(List.of(target), traversal);
+        // Build GraphPattern from hints (NEW: structured pattern support)
+        List<org.ddse.ml.cef.dto.GraphPattern> patterns = new ArrayList<>();
+        if (graphHints.length > 1) {
+            // Create SEPARATE 1-hop patterns for each relation type
+            // All patterns start from graphHints[0] (e.g., Patient)
+            // This matches the actual graph structure where relations fan out from the same
+            // source node
+            String sourceLabel = graphHints[0];
+
+            for (int i = 1; i < graphHints.length; i++) {
+                String relationType = graphHints[i];
+                // Create a single-hop pattern: sourceLabel --relationType--> *
+                List<org.ddse.ml.cef.dto.TraversalStep> steps = List.of(
+                        new org.ddse.ml.cef.dto.TraversalStep(
+                                sourceLabel, // e.g., "Patient"
+                                relationType, // e.g., "HAS_CONDITION"
+                                "*", // wildcard for any target
+                                0 // single step
+                        ));
+
+                patterns.add(org.ddse.ml.cef.dto.GraphPattern.multiHop(
+                        "pattern-" + sourceLabel + "-" + relationType,
+                        steps,
+                        "Single-hop pattern: " + sourceLabel + " --" + relationType + "--> *"));
+            }
+        }
+
+        return new GraphQuery(
+                List.of(target),
+                traversal,
+                patterns, // NEW: patterns field
+                null, // NEW: combinator field
+                org.ddse.ml.cef.dto.RankingStrategy.HYBRID // NEW: rankingStrategy field
+        );
     }
 
     /**

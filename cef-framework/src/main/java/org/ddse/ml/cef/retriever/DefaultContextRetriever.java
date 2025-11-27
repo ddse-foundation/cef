@@ -4,10 +4,9 @@ import org.ddse.ml.cef.config.CefProperties;
 import org.ddse.ml.cef.domain.Chunk;
 import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;
-import org.ddse.ml.cef.dto.GraphQuery;
-import org.ddse.ml.cef.dto.ResolutionTarget;
-import org.ddse.ml.cef.dto.RetrievalRequest;
+import org.ddse.ml.cef.dto.*;
 import org.ddse.ml.cef.repository.ChunkStore;
+import org.ddse.ml.cef.service.PatternExecutor;
 import org.ddse.ml.cef.storage.GraphStore;
 import org.ddse.ml.cef.storage.GraphSubgraph;
 import org.slf4j.Logger;
@@ -40,15 +39,18 @@ public class DefaultContextRetriever implements ContextRetriever {
     private final ChunkStore chunkStore;
     private final EmbeddingModel embeddingModel;
     private final CefProperties properties;
+    private final org.ddse.ml.cef.service.PatternExecutor patternExecutor;
 
     public DefaultContextRetriever(GraphStore graphStore,
             ChunkStore chunkStore,
             EmbeddingModel embeddingModel,
-            CefProperties properties) {
+            CefProperties properties,
+            org.ddse.ml.cef.service.PatternExecutor patternExecutor) {
         this.graphStore = graphStore;
         this.chunkStore = chunkStore;
         this.embeddingModel = embeddingModel;
         this.properties = properties;
+        this.patternExecutor = patternExecutor;
     }
 
     @Override
@@ -57,6 +59,13 @@ public class DefaultContextRetriever implements ContextRetriever {
 
         log.info("=== [ContextRetriever] Starting Retrieval ===");
         log.info("Request: {}", request);
+
+        // Pattern-based traversal if patterns are provided
+        if (request.graphQuery() != null && request.graphQuery().usePatternsForTraversal()) {
+            log.info("Strategy: PATTERN_BASED_TRAVERSAL (GraphQuery with patterns provided)");
+            log.info("Patterns: {}", request.graphQuery().patterns().size());
+            return executePatternBasedRetrieval(request, startTime);
+        }
 
         if (request.graphQuery() != null && request.graphQuery().targets() != null
                 && !request.graphQuery().targets().isEmpty()) {
@@ -494,6 +503,155 @@ public class DefaultContextRetriever implements ContextRetriever {
                 .collect(Collectors.joining(" "));
 
         return originalQuery + " " + keywordString;
+    }
+
+    /**
+     * Execute pattern-based retrieval: run graph patterns, extract nodes, then
+     * vector search on linked chunks.
+     */
+    private Mono<RetrievalResult> executePatternBasedRetrieval(RetrievalRequest request, long startTime) {
+        GraphQuery graphQuery = request.graphQuery();
+
+        // First, resolve entry points from targets
+        return resolveEntryPoints(graphQuery, request.topK())
+                .flatMap(entryPoints -> {
+                    if (entryPoints.isEmpty()) {
+                        log.warn("No entry points resolved. Falling back to vector search.");
+                        return retrieveFromVectorStore(new VectorRetrievalRequest(request.query(), request.topK()));
+                    }
+
+                    log.info("Resolved {} entry points for pattern execution", entryPoints.size());
+
+                    // Execute patterns (or combinator if present)
+                    Mono<List<MatchedPath>> pathsMono;
+                    if (graphQuery.hasCombinator()) {
+                        pathsMono = executeCombinedPatterns(graphQuery, new HashSet<>(entryPoints), request.topK());
+                    } else if (!graphQuery.patterns().isEmpty()) {
+                        // Single pattern or multiple independent patterns
+                        Set<UUID> entrySet = new HashSet<>(entryPoints);
+                        RankingStrategy ranking = graphQuery.rankingStrategy() != null
+                                ? graphQuery.rankingStrategy()
+                                : RankingStrategy.PATH_LENGTH;
+
+                        pathsMono = Flux.fromIterable(graphQuery.patterns())
+                                .flatMap(pattern -> Mono.fromCallable(() -> patternExecutor.executePattern(pattern,
+                                        entrySet, request.topK(), ranking)))
+                                .flatMapIterable(list -> list)
+                                .collectList();
+                    } else {
+                        log.warn(
+                                "Pattern traversal requested but no patterns provided. Falling back to vector search.");
+                        return retrieveFromVectorStore(new VectorRetrievalRequest(request.query(), request.topK()));
+                    }
+
+                    return pathsMono
+                            .flatMap(matchedPaths -> {
+                                if (matchedPaths.isEmpty()) {
+                                    log.warn("Pattern execution returned no paths. Falling back to vector search.");
+                                    return retrieveFromVectorStore(
+                                            new VectorRetrievalRequest(request.query(), request.topK()));
+                                }
+
+                                log.info("Pattern execution found {} paths", matchedPaths.size());
+
+                                // Extract all node IDs from matched paths
+                                Set<UUID> nodeIds = matchedPaths.stream()
+                                        .flatMap(path -> path.nodeIds().stream())
+                                        .collect(Collectors.toSet());
+
+                                log.info("Extracting {} unique nodes from matched paths", nodeIds.size());
+
+                                // Get nodes and edges from graph
+                                return graphStore.extractSubgraph(new ArrayList<>(nodeIds), 0) // depth=0, we already
+                                                                                               // have the nodes
+                                        .flatMap(subgraph -> {
+                                            // Get chunks linked to these nodes for vector search
+                                            return Flux.fromIterable(nodeIds)
+                                                    .flatMap(nodeId -> chunkStore.findByLinkedNodeId(nodeId))
+                                                    .collectList()
+                                                    .map(chunks -> {
+                                                        log.info("Found {} chunks linked to pattern nodes",
+                                                                chunks.size());
+                                                        return new RetrievalResult(
+                                                                subgraph.getNodes(),
+                                                                subgraph.getEdges(),
+                                                                chunks,
+                                                                RetrievalResult.RetrievalStrategy.HYBRID);
+                                                    });
+                                        });
+                            });
+                })
+                .doOnSuccess(result -> {
+                    result.setRetrievalTimeMs(System.currentTimeMillis() - startTime);
+                    log.info(
+                            "=== [ContextRetriever] Finished Pattern-Based Retrieval. Nodes: {}, Edges: {}, Chunks: {} ===",
+                            result.getNodes().size(), result.getEdges().size(), result.getChunks().size());
+                });
+    }
+
+    /**
+     * Execute multiple patterns with combinator logic (INTERSECTION, UNION,
+     * SEQUENTIAL).
+     */
+    private Mono<List<MatchedPath>> executeCombinedPatterns(GraphQuery graphQuery, Set<UUID> entryPoints,
+            int maxPaths) {
+        QueryCombinator combinator = graphQuery.combinator();
+        List<GraphPattern> patterns = graphQuery.patterns();
+        RankingStrategy ranking = graphQuery.rankingStrategy() != null
+                ? graphQuery.rankingStrategy()
+                : RankingStrategy.PATH_LENGTH;
+
+        return Flux.fromIterable(patterns)
+                .flatMap(pattern -> Mono
+                        .fromCallable(() -> patternExecutor.executePattern(pattern, entryPoints, maxPaths, ranking)))
+                .collectList()
+                .map(allResults -> {
+                    switch (combinator.type()) {
+                        case INTERSECTION:
+                            // Only paths with nodes present in ALL pattern results
+                            return intersectPaths(allResults);
+                        case UNION:
+                            // All paths from all patterns
+                            return allResults.stream()
+                                    .flatMap(List::stream)
+                                    .collect(Collectors.toList());
+                        case SEQUENTIAL:
+                            // Execute patterns in order, feed results forward (TODO: implement properly)
+                            log.warn("SEQUENTIAL combinator not yet fully implemented, using UNION");
+                            return allResults.stream()
+                                    .flatMap(List::stream)
+                                    .collect(Collectors.toList());
+                        default:
+                            return Collections.emptyList();
+                    }
+                });
+    }
+
+    /**
+     * Intersection: only return paths where nodes appear in all pattern results.
+     */
+    private List<MatchedPath> intersectPaths(List<List<MatchedPath>> allResults) {
+        if (allResults.isEmpty())
+            return Collections.emptyList();
+
+        // Get node IDs from first result
+        Set<UUID> commonNodes = allResults.get(0).stream()
+                .flatMap(path -> path.nodeIds().stream())
+                .collect(Collectors.toSet());
+
+        // Intersect with other results
+        for (int i = 1; i < allResults.size(); i++) {
+            Set<UUID> currentNodes = allResults.get(i).stream()
+                    .flatMap(path -> path.nodeIds().stream())
+                    .collect(Collectors.toSet());
+            commonNodes.retainAll(currentNodes);
+        }
+
+        // Filter paths to only those containing common nodes
+        Set<UUID> finalCommon = commonNodes;
+        return allResults.get(0).stream()
+                .filter(path -> path.nodeIds().stream().anyMatch(finalCommon::contains))
+                .collect(Collectors.toList());
     }
 
     /**
