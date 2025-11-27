@@ -2,7 +2,7 @@
 
 **Research-Grade ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
 
-> **⚠️ Community Edition Notice:** This framework is designed for **Developers (Rapid Prototyping)** and **Academics (Experimentation)**. It is **NOT** currently engineered for Enterprise Production use (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
+> **Community Edition Notice:** This framework is designed for **Developers (Rapid Prototyping)** and **Academics (Experimentation)**. It is **NOT** currently engineered for Enterprise Production use (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
 
 [![Version](https://img.shields.io/badge/version-beta--0.5-blue.svg)](RELEASE_NOTES.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
