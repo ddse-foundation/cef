@@ -136,8 +136,9 @@ cd cef-framework
 mvn test
 
 # View benchmark results
-open docs/benchmark_comparison.png
-open docs/EVALUATION_SUMMARY.md
+open cef-framework/BENCHMARK_REPORT.md
+open cef-framework/BENCHMARK_REPORT_2.md
+open cef-framework/SAP_BENCHMARK_REPORT.md
 ```
 
 #### Example Usage
@@ -271,11 +272,9 @@ See [Known Issues](known-issues) for complete list and workarounds.
 ### 📝 Documentation
 
 - **[User Guide](user-guide)** - Complete integration guide with ORM patterns
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical architecture and design decisions
+- **[Architecture](architecture)** - Technical architecture and design decisions
 - **[Quick Start](quickstart)** - Get started in 5 minutes
 - **[Known Issues](known-issues)** - Testing status and limitations
-- **[ADR-002.md](docs/ADR-002.md)** - Architecture decision record
-- **[requirements.md](docs/requirements.md)** - Detailed specifications
 
 ---
 
@@ -338,7 +337,7 @@ See [LICENSE](LICENSE) file for details.
 
 ### 📞 Support
 
-- **Documentation:** [User Guide](USER_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md)
+- **Documentation:** [User Guide](user-guide) | [Architecture](architecture)
 - **Issues:** GitHub Issues (repository link TBD)
 - **Community:** DDSE Foundation website
 - **Email:** Contact through DDSE Foundation

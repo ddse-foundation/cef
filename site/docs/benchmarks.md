@@ -1,203 +1,86 @@
-# CEF Framework: Knowledge Model Superiority - Evaluation Summary
+# Benchmarks (beta-0.5)
 
-**Date:** November 27, 2025  
-**Framework:** CEF (Context-Enhanced Framework) with GraphPattern Support  
-**Domain:** Medical Clinical Decision Support
+Real numbers from the published benchmark runs (no synthetic placeholders). Reports live in `cef-framework/BENCHMARK_REPORT.md` and `cef-framework/BENCHMARK_REPORT_2.md`.
 
 ---
 
-## Executive Summary
+## Medical Clinical Decision Support (Core Suite)
 
-This evaluation demonstrates the **clear superiority of Knowledge Model (Graph RAG)** over traditional Vector-Only (Naive RAG) approaches for complex medical decision support scenarios. Across 4 benchmark scenarios requiring multi-hop reasoning, the Knowledge Model retrieved **120% more structurally-related content** with only **19.5% latency overhead**.
+| Scenario | Vector-Only (chunks) | Knowledge Model (chunks) | Lift | Latency Vector | Latency KM |
+|----------|----------------------|--------------------------|------|----------------|------------|
+| Multi-hop contraindication discovery | 5 | 12 | **+140%** | 22 ms | 23 ms |
+| High-risk behavioral pattern | 5 | 8 | **+60%** | 21 ms | 22 ms |
+| Cascading side-effect risk | 5 | 8 | **+60%** | 18 ms | 23 ms |
+| Transitive exposure (shared doctors) | 5 | 16 | **+220%** | 26 ms | 24 ms |
 
-### Key Results
-
-| Metric | Vector-Only | Knowledge Model | Improvement |
-|--------|-------------|-----------------|-------------|
-| **Average Chunks Retrieved** | 5 | 9.75 | **+95%** |
-| **Average Latency** | 21.8ms | 26.0ms | +19.5% |
-| **Structural Coverage** | Limited to semantic matches | **Full graph neighborhood** | ✓ |
-| **Content Diversity** | Patient notes only | **Patients + Conditions + Medications** | ✓ |
-
----
-
-## Scenario-by-Scenario Analysis
-
-### Scenario 1: Multi-Hop Contraindication Discovery
-**Query:** "Find patients whose medications contradict their other conditions"
-
-- **Vector-Only:** 5 chunks (mostly condition profiles from semantic match)
-- **Knowledge Model:** 12 chunks (patients + medications + contraindicated conditions)
-- **Improvement:** **+140%**
-
-**Why KM Wins:**  
-Graph patterns executed: `Patient → HAS_CONDITION → *` and `Patient → PRESCRIBED_MEDICATION → *`  
-These patterns discovered 8 unique graph nodes (patients, conditions, medications), then retrieved chunks from all structurally-related entities. Vector search only found semantically similar condition descriptions.
-
-**Evidence from Report:**
-```
-Vector-Only: 4 CONDITION_PROFILE + 1 CLINICAL_NOTE
-Knowledge Model: 3 CONDITION_PROFILE + 2 MEDICATION_PROFILE + 7 CLINICAL_NOTE
-```
-
-The KM retrieved **Medication profiles** (Metformin, Lisinopril, Propranolol) that are CONTRAINDICATED for the conditions, which vector search completely missed.
+Why it wins:
+- Graph traversal follows `Patient → HAS_CONDITION` and `Patient → PRESCRIBED_MEDICATION` without inventing hops.
+- Vector search is constrained to the traversed subgraph before falling back.
+- Medication and provider profiles were added as chunks, so traversal returns diverse evidence, not just condition blurbs.
 
 ---
 
-### Scenario 2: High-Risk Behavioral Pattern
-**Query:** "Find smoking asthma patients on medications that interact with smoking"
+## Medical (Advanced Separation/Aggregation)
 
-- **Vector-Only:** 5 chunks
-- **Knowledge Model:** 8 chunks
-- **Improvement:** **+60%**
+| Scenario | Vector-Only (chunks) | Knowledge Model (chunks) | Lift | Latency Vector | Latency KM |
+|----------|----------------------|--------------------------|------|----------------|------------|
+| 3-degree provider separation | 5 | 11 | **+6** chunks | 49 ms | 64 ms |
+| Polypharmacy intersection (RA + Albuterol + HbA1c) | 5 | 14 | **+9** chunks | 23 ms | 30 ms |
+| Provider network cascade | 5 | 11 | **+6** chunks | 27 ms | 33 ms |
+| Bidirectional RA risk network | 5 | 15 | **+10** chunks | 23 ms | 25 ms |
 
-**Why KM Wins:**  
-Patterns: `Patient → HAS_CONDITION → *` + `Patient → PRESCRIBED_MEDICATION → *`  
-Found 10 unique nodes including both the patients AND their prescribed medications, enabling correlation of behavioral risk (smoking) with pharmaceutical interactions.
-
----
-
-### Scenario 3: Cascading Side Effect Risk
-**Query:** "Find patients with cascading medication side effect risks from Prednisone"
-
-- **Vector-Only:** 5 chunks
-- **Knowledge Model:** 8 chunks  
-- **Improvement:** **+60%**
-
-**Why KM Wins:**  
-Started from Medication entity (Prednisone) and traversed `Medication → CONTRAINDICATED_FOR → Condition` to find at-risk conditions, then retrieved chunks from both the medication and condition nodes. Vector search couldn't establish this causal chain.
+These scenarios combine multiple independent paths (shared doctors, medication interactions, comorbidities). Vector-only retrieval stays capped at 5 semantically closest chunks; the knowledge model surfaces connected patients, providers, and medications.
 
 ---
 
-### Scenario 4: Transitive Exposure Risk
-**Query:** "Find patients sharing doctors with immunocompromised CHF patients"
+## SAP ERP / Supply Chain (Financial Domain)
 
-- **Vector-Only:** 5 chunks
-- **Knowledge Model:** 16 chunks
-- **Improvement:** **+220%** 🔥
+| Scenario | Vector-Only (chunks) | Knowledge Model (chunks) | Lift | Latency Vector | Latency KM |
+|----------|----------------------|--------------------------|------|----------------|------------|
+| Shadow IT budget leak | 5 | 5 | – | 20 ms | 38 ms |
+| Transitive supply-chain disruption | 5 | 5 | – | 19 ms | 40 ms |
+| Hidden vendor dependency | 5 | 5 | – | 18 ms | 37 ms |
+| Cost-center contagion | 5 | 5 | – | 20 ms | 35 ms |
 
-**Why KM Wins:**  
-This is the **most dramatic improvement** because it requires deep transitive reasoning:
-```
-Patient → TREATED_BY → Doctor → TREATED_BY (reverse) → Other Patients
-Patient → HAS_CONDITION → CHF
-Patient → PRESCRIBED_MEDICATION → Immunosuppressants
-```
-
-The pattern executor found 12 unique graph nodes by traversing these relationships. Vector search has NO MECHANISM to discover "patients who share doctors" - it can only find semantically similar clinical notes.
-
-**This scenario proves the fundamental limitation of pure vector search for structural queries.**
+Interpretation:
+- The SAP dataset already encodes long transactional narratives per chunk, so vector-only hits the same five invoices/vendors. Graph traversal keeps parity but incurs latency because it still walks 4–6 hops to validate relationships.
+- Use these cases as a regression harness for enterprise graph depth and temporal reasoning; they also validate dual persistence on a non-medical schema.
 
 ---
 
-## Technical Implementation Details
+## How the Harness Works
 
-### What Changed to Enable This
-
-#### 1. **Fixed Pattern Generation** (BenchmarkBase.java)
-**Problem:** Original code created invalid multi-hop chains like:
-```
-Patient → HAS_CONDITION → Condition → PRESCRIBED_MEDICATION → ?
-```
-But Condition nodes don't have PRESCRIBED_MEDICATION edges!
-
-**Solution:** Generate separate 1-hop patterns for each relation:
-```java
-// BEFORE (broken):
-Pattern: Patient → HAS_CONDITION → * → PRESCRIBED_MEDICATION → *
-
-// AFTER (working):
-Pattern 1: Patient → HAS_CONDITION → *
-Pattern 2: Patient → PRESCRIBED_MEDICATION → *
-```
-
-#### 2. **Added Chunks to All Entity Nodes**
-**Problem:** Only Patient nodes had linked chunks. Condition/Medication/Doctor nodes had NO text content.
-
-**Solution:** Generated profile chunks for each entity type:
-```python
-# Medical data (generate_medical_data.py)
-- Condition profiles: "**CONDITION PROFILE** Name: Type 2 Diabetes..."
-- Medication profiles: "**MEDICATION PROFILE** Name: Metformin..."
-- Provider profiles: "**PROVIDER PROFILE** Provider ID: DOC-102..."
-
-# SAP data (SapDataParser.java)
-- Vendor profiles: "**VENDOR MASTER DATA** Vendor ID: V-1000..."
-- Material profiles: "**MATERIAL MASTER DATA** Material ID: M-9000..."
-- Transaction chunks: "Invoice 100014 posted on 2025-02-15..."
-```
-
-Now when pattern traversal finds a Medication node via `Patient → PRESCRIBED_MEDICATION → Medication`, it retrieves the Medication's profile chunk containing drug class, dosages, side effects, etc.
-
-#### 3. **Pattern Execution Flow**
-```
-1. Query: "Find patients whose medications contradict their conditions"
-2. Entry Point Resolution: Vector search finds 5 Patient nodes (PT-10118, PT-10100, etc.)
-3. Pattern Execution:
-   - Pattern 1: Patient → HAS_CONDITION → *
-     Finds: 5 Condition nodes (Type 2 Diabetes, Hypertension, CHF, etc.)
-   - Pattern 2: Patient → PRESCRIBED_MEDICATION → *
-     Finds: 5 Medication nodes (Metformin, Lisinopril, Prednisone, etc.)
-   - Pattern 3: Patient → CONTRAINDICATED_FOR → * (0 matches - not in data model)
-4. Result: 8 unique nodes discovered (5 Patients + some Conditions + some Medications)
-5. Chunk Retrieval: Get chunks linked to all 8 nodes
-6. Reranking: Select topK=12 chunks by relevance scores
-7. Return: 12 chunks (7 patient notes + 3 condition profiles + 2 medication profiles)
-```
-
-#### 4. **Why Vector-Only Fails**
-```
-1. Query: "Find patients whose medications contradict their conditions"
-2. Vector Embedding: Converts query to 768-dim vector
-3. Similarity Search: Finds 5 chunks with highest cosine similarity
-4. Result: 5 chunks (4 condition profiles + 1 patient note)
-   - Why condition profiles? Because query contains "medications contradict conditions"
-     which is semantically similar to condition descriptions
-   - Missing: Actual patient data, medication profiles, doctor info
-```
-
-Vector search has **no structural awareness** - it cannot traverse `Patient → PRESCRIBED_MEDICATION → Medication` relationships.
+- **Baseline:** `RetrievalRequest` without `graphQuery` → pure vector search, `topK=5`.
+- **Knowledge Model:** Adds `GraphQuery` with `ResolutionTarget` + `TraversalHint`/`GraphPattern`. Retrieval order is graph traversal → hybrid vector search constrained to traversed nodes → vector fallback if results &lt; 3.
+- **Data:** 177 nodes / 455 edges in medical; SAP fixtures include vendors, materials, invoices, projects with multi-hop relations.
+- **LLM stack used in tests:** vLLM Qwen3-Coder-30B for generation, Ollama `nomic-embed-text` (768d) for embeddings, DuckDB + JGraphT for persistence.
 
 ---
 
-## Visualization
+## Reproduce the Numbers Yourself
 
-![Benchmark Comparison](/img/benchmark_comparison.png)
+```bash
+cd cef-framework
 
-**Left Chart:** Knowledge Model retrieves 60-220% more chunks across all scenarios.  
-**Right Chart:** Latency overhead is minimal (2-16ms) compared to semantic value gained.
+# Core medical scenarios (BENCHMARK_REPORT.md)
+mvn -Dtest=MedicalBenchmarkTest test
 
----
+# Advanced medical (multi-path aggregation) (BENCHMARK_REPORT_2.md)
+mvn -Dtest=MedicalBenchmarkTest2 test
 
-## Conclusions
+# SAP ERP supply-chain/finance scenarios (SAP_BENCHMARK_REPORT.md)
+mvn -Dtest=SapBenchmarkTest test
+```
 
-### 1. **Knowledge Model is Superior for Structural Queries**
-When queries require graph traversal, relationship reasoning, or multi-entity correlation, Knowledge Model outperforms vector search by **2-3x** in content coverage.
-
-### 2. **Best Use Cases for Knowledge Model**
-- Multi-hop reasoning ("find X connected to Y via Z")
-- Transitive relationships ("find entities sharing connections")
-- Contraindication/risk detection (requires entity relationship awareness)
-- Root cause analysis (requires causal chain traversal)
-
-### 3. **Latency is Acceptable**
-Average overhead of 19.5% (4ms) is negligible for clinical decision support where correctness matters far more than sub-50ms response times.
-
-### 4. **Pattern Design Matters**
-The breakthrough came from fixing pattern generation to match actual graph structure. Invalid patterns (multi-hop chains that don't exist) return 0 results and fall back to vector search.
-
-### 5. **Data Completeness is Critical**
-Entity nodes MUST have linked chunks. Without text content on Condition/Medication/Doctor nodes, pattern traversal discovers entities but retrieves nothing.
+Reports are written to the project root (`cef-framework/`). Chunk samples and latency stats are embedded in each Markdown report for auditability.
 
 ---
 
-## What This Proves
+## Key Takeaways
 
-✓ **Graph patterns enable structural reasoning** that pure vector embeddings cannot achieve  
-✓ **Pattern-based retrieval discovers related entities** missed by semantic search  
-✓ **Minimal latency cost** (19.5%) for massive content improvement (120%)  
-✓ **Medical decision support requires graph reasoning** - patients aren't isolated documents  
-✓ **CEF Framework successfully implements Graph RAG** with measurable superiority over Naive RAG
+- **Structural coverage matters:** Graph traversal surfaces medications, providers, and comorbidities that similarity search cannot guess.
+- **Fallback is controlled:** Knowledge Model stays hybrid until it exhausts graph evidence, then falls back to vector; you never silently drop to "vector-only".
+- **Domain-agnostic proof:** Medical benchmarks show large retrieval lifts; SAP scenarios validate the same engine on enterprise data with different performance/coverage trade-offs. 
 
 ---
 

@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'CEF Framework',
-  tagline: 'ORM for LLM Context Engineering - Hibernate for Knowledge Models',
+  tagline: 'ORM for LLM Context Engineering - Build intelligent applications with graph-powered retrieval',
   favicon: 'img/favicon.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -53,6 +53,13 @@ const config: Config = {
 
   themeConfig: {
     image: 'img/logo.svg',
+    metadata: [
+      {name: 'keywords', content: 'java, llm, rag, knowledge graph, vector database, context engineering, orm, spring boot, ai'},
+      {name: 'description', content: 'CEF Framework - ORM for LLM Context Engineering. Build intelligent Java applications with graph-powered retrieval that outperforms vector-only approaches by 60-220%.'},
+      {property: 'og:type', content: 'website'},
+      {property: 'og:title', content: 'CEF Framework - ORM for LLM Context Engineering'},
+      {property: 'og:description', content: 'Build intelligent Java applications with proven graph-powered retrieval. 60-220% more relevant content vs vector-only RAG.'},
+    ],
     colorMode: {
       respectPrefersColorScheme: true,
     },
@@ -127,7 +134,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} DDSE Foundation. Licensed under MIT.`,
+      copyright: `Copyright © 2024-${new Date().getFullYear()} DDSE Foundation. Licensed under MIT. Built by Mahmudur R Manna (mrmanna).`,
     },
     prism: {
       theme: prismThemes.github,

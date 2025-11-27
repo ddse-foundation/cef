@@ -279,8 +279,8 @@ mvn spring-boot:run
 ## Next Steps
 
 1. **Review Benchmark Results**
-   - See `docs/EVALUATION_SUMMARY.md` for detailed analysis
-   - View `docs/benchmark_comparison.png` for performance charts
+   - See the [Benchmarks](benchmarks.md) page for published reports
+   - Image: `static/img/benchmark_comparison.png`
    - Knowledge Model shows 60-220% improvement over vector-only
 
 2. **Explore Test Suite**
@@ -359,4 +359,3 @@ For issues or questions:
 - Check `docs/` directory for detailed documentation
 - Review ADR-002 and ADR-003 for architecture details
 - Contact: mrmanna (@DDSE)
-

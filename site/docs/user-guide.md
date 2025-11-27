@@ -37,6 +37,8 @@ Welcome to the Context Engineering Framework (CEF) - the **Hibernate for LLM Con
 - Unstructured text without entities
 - One-shot question answering without context
 
+> API note (beta-0.5): The canonical types are `Node`, `Edge`, and `Chunk`, plus `RelationType(name, sourceLabel, targetLabel, semantics, directed)` with enum values `HIERARCHICAL`, `ASSOCIATIVE`, `CAUSAL`, `TEMPORAL`, `SPATIAL`, and `CUSTOM`. Some snippets below reflect earlier enum names; use the [Hands-On tutorial](tutorials/build-your-first-model.md) for the exact code paths exercised by the tests.
+
 ---
 
 ## Table of Contents
@@ -1221,8 +1223,8 @@ CEF provides an ORM abstraction for knowledge models just as Hibernate provides 
 6. Start with JGraphT, migrate to Neo4j when needed
 
 **Next Steps:**
-- Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) for deep dive
-- Review [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for benchmark analysis
+- Read [Architecture](architecture.md) for deep dive
+- Review the [Benchmarks](benchmarks.md) page for the published analyses
 - Explore test suite in `cef-framework/src/test/java` for real-world examples
 - Visit [DDSE Foundation](https://ddse-foundation.github.io/) for updates and community resources
 

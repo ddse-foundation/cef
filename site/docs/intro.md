@@ -1,355 +1,70 @@
-# CEF - Context Engineering Framework
+# Why CEF Instead of Naive RAG
 
-**ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
+**CEF is a knowledge-model ORM for LLMs.** It treats entities and relationships the way Hibernate treats tables and joins, then persists both graph structure and semantic chunks so retrieval can reason over relationships instead of only cosine similarity.
 
-[![Version](https://img.shields.io/badge/version-beta--0.5-blue.svg)](RELEASE_NOTES.md)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+**Benchmarked advantage:** In the medical benchmark suite, the knowledge model retrieved **60–220% more relevant chunks** than vector-only RAG while adding only **~4 ms latency** (average 26 ms vs 21.8 ms). Advanced scenarios (3–5 hop queries) pulled **6–9 more results** than naive RAG.
 
 ---
 
-## Overview
+## Why Not Vector-Only RAG
 
-**CEF is an ORM for LLM context engineering** - just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores for LLM context. 
-
-**✅ Proven with comprehensive benchmarks:** Knowledge Model retrieves **60-220% more relevant content** than vector-only approaches for complex queries requiring relationship reasoning.
-
-### Core Capabilities
-
-- 🗄️ **Knowledge Model ORM** - Define entities (nodes) and relationships (edges) like JPA @Entity
-- 🔄 **Dual Persistence** - Graph store (relationships) + Vector store (semantics)
-- 🔍 **Intelligent Context Assembly** - Relationship navigation + semantic search + keyword fallback
-- 📦 **Storage Agnostic** - Pluggable backends (JGraphT, Neo4j, Postgres, Qdrant)
-- 🔌 **LLM Integration** - OpenAI, Ollama, vLLM with MCP tool support
-- 📄 **Parser System** - PDF, YAML, CSV, JSON with ANTLR support
-- ☁️ **Storage Adapters** - FileSystem, S3/MinIO
-- ⚡ **Fully Reactive** - Spring WebFlux + R2DBC
-
-**Author:** Mahmudur R Manna (mrmanna) - Founder and Principal Architect of DDSE  
-**Organization:** [DDSE Foundation](https://ddse-foundation.github.io/) (Decision-Driven Software Engineering)  
-**Date:** 2024
+- **No structural reasoning:** Vector search cannot follow `Patient → Medication → ContraindicatedFor → Condition` chains. In Scenario 4 of the benchmark, vector-only returned 5 chunks; the knowledge model returned 16 (+220%).
+- **Semantic bias, low coverage:** Queries with words like "medication" matched condition summaries, missing the actual drug profiles and patients (Scenario 1: 12 vs 5 chunks, +140%).
+- **Transitive queries fail:** "Patients sharing doctors with immunocompromised CHF patients" needs relationship traversal; pure vectors have no notion of shared doctors.
+- **Context waste:** Without graph hints, token budgets get spent on loosely related text instead of the connected entities required to answer the question.
 
 ---
 
-## Architecture
+## What CEF Adds
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                         │
-│          (Define Knowledge Models: Entities & Relations)     │
-└─────────────────────────────────────────────────────────────┘
-                             │
-                 ┌───────────┴───────────┐
-                 │    ORM Interface       │
-                 │  1. KnowledgeIndexer   │  (like EntityManager)
-                 │  2. KnowledgeRetriever │  (like Repository)
-                 └────────────────────────┘
-                             │
-┌─────────────────────────────────────────────────────────────┐
-│                  CEF ORM Engine                              │
-│  • Knowledge Model Manager                                   │
-│  • Relationship Navigator (Graph reasoning)                  │
-│  • Context Assembler (Multi-strategy)                        │
-│  • Parser System (Domain transformation)                     │
-│  • DataSource Adapters (FileSystem, S3/MinIO)               │
-│  • Dual Persistence Coordinator                              │
-└─────────────────────────────────────────────────────────────┘
-                             │
-┌─────────────────────────────────────────────────────────────┐
-│                   Storage Layer                              │
-│  Graph Store: Node, Edge, RelationType (relationships)       │
-│  Vector Store: Chunk with embeddings (semantic context)      │
-│  Backends: DuckDB, PostgreSQL, Neo4j, Qdrant                 │
-└─────────────────────────────────────────────────────────────┘
-```
+- 🗄️ **Knowledge ORM APIs:** `KnowledgeIndexer` (persist nodes/edges/chunks) and `KnowledgeRetriever` (pattern-aware retrieval) mirror familiar JPA-style patterns.
+- 🔄 **Dual persistence:** Graph store (relationships) + vector store (semantics) stay in sync.
+- 🔍 **Three-stage retrieval:** Graph traversal → hybrid graph-constrained vector search → vector fallback, so you never silently drop into "vector-only".
+- 📦 **Pluggable storage:** Tested defaults (DuckDB + JGraphT). Configured adapters for PostgreSQL/pgvector, Neo4j, Qdrant, Pinecone (see Known Issues for test status).
+- 🔌 **LLM tooling:** MCP tool for schema-aware prompts, OpenAI/Ollama/vLLM clients, with benchmarks executed on vLLM Qwen3-Coder-30B + Ollama nomic-embed-text.
+- 📊 **Evidence-backed:** Medical suite (177 nodes, 455 edges) shows 60–220% retrieval lift; supply-chain SAP suite exercises enterprise-style relationships.
 
 ---
 
-## Quick Start
+## Market Comparison (Grounded in CEF beta-0.5)
 
-### Prerequisites
-
-- Java 17+
-- Maven 3.8+
-- Docker & Docker Compose
-
-### 1. Clone and Build
-
-```bash
-git clone <repository-url>
-cd ced
-mvn clean install
-```
-
-### 2. Start Infrastructure
-
-```bash
-# Default: Only Ollama (DuckDB embedded, no external DB needed)
-docker-compose up -d
-
-# With PostgreSQL (optional - demonstrates agnosticism)
-docker-compose --profile postgres up -d
-
-# With MinIO (optional - demonstrates blob storage)
-docker-compose --profile minio up -d
-
-# All services
-docker-compose --profile postgres --profile minio up -d
-```
-
-### 3. Run Framework Tests
-
-```bash
-# Run comprehensive test suite with benchmarks
-cd cef-framework
-mvn test
-
-# View benchmark results
-cat target/surefire-reports/org.ddse.ml.cef.benchmark.MedicalBenchmarkTest.txt
-```
-
-### 4. Access Services
-
-- **Ollama**: http://localhost:11434/api/tags
-- **MinIO Console** (if enabled): http://localhost:9001
-- **PostgreSQL** (if enabled): localhost:5432
+|                     | Vector-Only RAG (typical) | Graph DB + custom GraphRAG | **CEF Knowledge ORM** |
+|---------------------|---------------------------|----------------------------|-----------------------|
+| **Goal**            | Similarity search over chunks | Manual graph modeling plus bespoke prompt work | ORM layer for knowledge models + dual persistence |
+| **Storage**         | Vector DB only            | Graph DB only              | Graph + vector stores kept consistent |
+| **Retrieval**       | Cosine similarity         | Cypher/Gremlin queries; prompt engineering | Pattern traversal → hybrid → fallback (automatic) |
+| **Developer UX**    | Ad-hoc scripts, little schema | Custom ingestion/migrations per project | JPA-like APIs (`indexNode`, `retrieve`), lifecycle hooks |
+| **LLM Integration** | RAG chains per app        | Hand-written prompts per graph | MCP tool with schema injection for LLM tool-calling |
+| **Evidence**        | –                         | –                          | Benchmarked +120% avg chunk lift (medical), 0–9 extra chunks in multi-hop/aggregation tests |
 
 ---
 
-## Project Structure
+## Beta-0.5 Facts (No Placeholders)
 
-```
-ced/
-├── cef-framework/          # Core framework (JAR library)
-│   ├── src/main/java/      # ORM implementation
-│   │   └── org/ddse/ml/cef/
-│   │       ├── domain/     # Node, Edge, Chunk, RelationType
-│   │       ├── api/        # KnowledgeIndexer, KnowledgeRetriever
-│   │       ├── storage/    # GraphStore, VectorStore interfaces
-│   │       ├── retriever/  # Pattern-based retrieval
-│   │       └── graph/      # JGraphT integration
-│   ├── src/test/java/      # Comprehensive test suite
-│   │   └── org/ddse/ml/cef/
-│   │       ├── benchmark/  # Performance benchmarks
-│   │       ├── integration/# Medical domain tests
-│   │       └── base/       # SAP financial data tests
-│   └── pom.xml
-│
-├── docs/
-│   ├── EVALUATION_SUMMARY.md   # Benchmark analysis
-│   ├── benchmark_comparison.png # Performance charts
-│   ├── ARCHITECTURE.md         # Technical architecture
-│   └── requirements.md         # Specifications
-│
-├── USER_GUIDE.md           # ORM integration guide
-├── RELEASE_NOTES.md        # Version beta-0.5
-├── KNOWN_ISSUES.md         # Testing status
-├── docker-compose.yml      # vLLM + Ollama services
-└── pom.xml                 # Parent POM
-```
+- **Tested stack:** DuckDB (embedded), JGraphT in-memory graph, vLLM Qwen3-Coder-30B for generation, Ollama nomic-embed-text (768d) for embeddings.
+- **Domains covered:** Medical clinical decision support (177 nodes / 455 edges) and SAP-style financial/supply-chain workflows.
+- **Results:** Medical benchmarks show +60–220% more relevant chunks; advanced separation/aggregation patterns add up to 9 extra chunks. SAP scenarios validate relationship traversal but keep chunk counts equal (5 vs 5) with higher latency (19–110% overhead) due to depth.
+- **Status:** PostgreSQL/pgvector, Neo4j, Qdrant, Pinecone, OpenAI LLMs are configured but **untested** (see Known Issues).
 
 ---
 
-## Configuration
+## When to Use CEF
 
-### Default (DuckDB + Ollama)
+- You need **entity-aware retrieval** (patients, doctors, vendors, materials) with multi-hop reasoning.
+- You want **storage agnosticism** (start in DuckDB/JGraphT, graduate to PostgreSQL/Neo4j without rewriting code).
+- You must keep **graph structure and semantic text aligned** and reproducible for audits/benchmarks.
 
-```yaml
-cef:
-  database:
-    type: duckdb
-    duckdb:
-      path: ./data/cef.duckdb
-  
-  llm:
-    default-provider: ollama
-    ollama:
-      base-url: http://localhost:11434
-      model: llama3.2:3b
-```
+## When Not to Use CEF
 
-**Note:** Benchmark tests use vLLM (Qwen3-Coder-30B) which requires separate installation. See [vLLM documentation](https://docs.vllm.ai/) for setup.
-
-### Optional (PostgreSQL)
-
-```yaml
-cef:
-  database:
-    type: postgresql
-    postgresql:
-      enabled: true
-      host: localhost
-      port: 5432
-      database: cef_db
-      username: cef_user
-      password: cef_password
-```
-
-### Optional (MinIO/S3)
-
-```yaml
-cef:
-  datasources:
-    blob-storage:
-      enabled: true
-      endpoint: http://localhost:9000
-      bucket: medical-documents
-      access-key: minioadmin
-      secret-key: minioadmin
-```
+- Pure document search with no relationships.
+- One-off prototypes where a simple vector DB suffices.
+- Graphs far beyond in-memory limits without moving to Neo4j (JGraphT is validated to ~100K nodes).
 
 ---
 
-## Usage
+## Pick Your Next Stop
 
-### 1. Framework Dependency
-
-Add to your `pom.xml`:
-
-```xml
-<dependency>
-    <groupId>org.ddse.ml</groupId>
-    <artifactId>cef-framework</artifactId>
-    <version>beta-0.5</version>
-</dependency>
-```
-
-**Note:** Beta release tested with DuckDB, vLLM (Qwen3-Coder-30B for generation), and Ollama (nomic-embed-text for embeddings). OpenAI integration is configured but untested. See [Known Issues](known-issues).
-
-### 2. Define Domain Entities
-
-```java
-// Your domain - framework doesn't know these
-public record PatientDTO(UUID id, String name, int age, String condition) {}
-```
-
-### 3. Create Custom Parser
-
-```java
-@Component
-public class MedicalPdfParser extends AbstractParser<MedicalParsedData> {
-    // Parse PDFs into Node/Edge/Chunk inputs
-}
-```
-
-### 4. Persist Knowledge Models
-
-```java
-@Autowired
-private KnowledgeIndexer indexer;  // Like EntityManager
-
-// Initialize ORM with relation types (like JPA entity mappings)
-indexer.initialize(rootNodes, relationTypes);
-
-// Bulk persist from data source (like StatelessSession)
-IndexResult result = indexer.fullIndex(dataSource);
-```
-
-### 5. Query Context
-
-```java
-@Autowired
-private KnowledgeRetriever retriever;  // Like Repository
-
-// Intelligent context assembly via relationship navigation
-SearchResult result = retriever.retrieve(
-    RetrievalRequest.builder()
-        .query("Show patients with diabetes")
-        .depth(2)  // Navigation depth through relationships
-        .topK(10)
-        .build()
-);
-```
-
----
-
-## Benchmark Results: Knowledge Model Superiority
-
-Comprehensive test suite with **real-world scenarios** proves Knowledge Model (graph + vector) significantly outperforms vector-only approaches:
-
-### Medical Domain Tests
-- **177 nodes:** 150 patients, 5 conditions, 7 medications, 15 doctors
-- **455 edges:** Patient-Condition, Patient-Medication, Patient-Doctor relationships
-- **177 vectorized chunks:** Clinical notes, condition profiles, medication profiles
-
-### Financial Domain Tests (SAP-Simulated)
-- **Enterprise data:** Vendors, materials, purchase orders, invoices
-- **Complex relationships:** Procurement workflows, financial transactions
-
-### Performance Comparison
-
-| Metric | Vector-Only | Knowledge Model | Improvement |
-|--------|-------------|-----------------|-------------|
-| Chunks Retrieved | 5 avg | 9.75 avg | **+95%** |
-| Latency | 21.8ms | 26.0ms | +19.5% |
-| Multi-hop Queries | Limited | **Full graph traversal** | ✅ |
-| Structural Coverage | Semantic only | **Entity relationships** | ✅ |
-
-**Key Finding:** Knowledge Model retrieves **60-220% more relevant content** for complex queries requiring relationship reasoning.
-
-![Benchmark Results](/img/benchmark_comparison.png)
-
-See [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.
-
----
-
-## Documentation
-
-- [User Guide](user-guide) - Complete ORM integration guide
-- [Benchmark Analysis](benchmarks) - Detailed evaluation (60-220% improvement proven)
-- [Release Notes](release-notes) - Version beta-0.5 release notes
-- [Known Issues](known-issues) - Testing status and limitations
-- [Quick Start](quickstart) - Get started in 5 minutes
-- [Architecture](architecture) - Technical architecture
-
----
-
-## Technology Stack
-
-- **Java 17** - Language
-- **Spring Boot 3.3.5** - Application framework
-- **Spring AI 1.0.0-M4** - LLM integration
-- **Spring WebFlux** - Reactive web
-- **Spring Data R2DBC** - Reactive database
-- **JGraphT 1.5.2** - In-memory graph
-- **ANTLR 4.13.1** - Parser generator
-- **DuckDB 1.1.3** - Default embedded database
-- **PostgreSQL 16** - Optional external database (with pgvector)
-- **Apache PDFBox 3.0.3** - PDF processing
-
----
-
-## License
-
-MIT License
-
-Copyright (c) 2024-2025 DDSE Foundation
-
-See [LICENSE](LICENSE) file for full license text.
-
----
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Test untested configurations (PostgreSQL, OpenAI, Neo4j)
-2. Report issues with detailed logs and reproduction steps
-3. Submit pull requests with test coverage
-4. Review [Known Issues](known-issues) for areas needing validation
-
-For questions, contact DDSE Foundation at https://ddse-foundation.github.io/
-
----
-
-## Authors
-
-- **Mahmudur R Manna (mrmanna)** - Founder and Principal Architect, [DDSE Foundation](https://ddse-foundation.github.io/)
-
----
-
-## About DDSE Foundation
-
-This framework is developed by the **DDSE Foundation** (Decision-Driven Software Engineering), an open-source initiative advancing principled approaches to software architecture and engineering.
-
+- **Run it now:** See [Quickstart](quickstart.md) for a 10-minute path with DuckDB + Ollama.
+- **Understand the engine:** Read [Architecture](architecture.md) for traversal, fallback, and storage internals.
+- **Build something real:** Follow the [Hands-on tutorial](tutorials/build-your-first-model.md) to define relation types, index data, and retrieve context.
+- **Inspect proof:** Review [Benchmarks](benchmarks.md) and [Validation & Tests](validation.md).

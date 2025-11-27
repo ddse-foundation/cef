@@ -152,22 +152,21 @@ public class Edge {
 @Entity
 public class RelationType {
     String name;
-    RelationSemantics semantics;       // HIERARCHY, ASSOCIATION, TEMPORAL, etc.
+    RelationSemantics semantics;       // HIERARCHICAL, ASSOCIATIVE, CAUSAL, TEMPORAL, SPATIAL, CUSTOM
     boolean bidirectional;
 }
 
 enum RelationSemantics {
-    HIERARCHY,        // Parent-child (IS_PART_OF)
-    CLASSIFICATION,   // Taxonomy (IS_A)
-    ASSOCIATION,      // General link (RELATED_TO)
-    TEMPORAL,         // Time-based (BEFORE, AFTER)
-    CAUSALITY,        // Cause-effect (CAUSES)
-    ATTRIBUTION,      // Ownership (HAS, OWNS)
-    CUSTOM            // User-defined
+    HIERARCHICAL,   // Parent-child or taxonomy (IS_PART_OF, IS_A)
+    ASSOCIATIVE,    // General link (RELATED_TO, REFERENCES)
+    CAUSAL,         // Cause-effect (CAUSES, TREATS)
+    TEMPORAL,       // Time-based (BEFORE, AFTER)
+    SPATIAL,        // Location (NEAR, LOCATED_IN)
+    CUSTOM          // User-defined
 }
 ```
 
-**Key Insight:** Framework uses `RelationSemantics` for traversal logic (e.g., follow HIERARCHY for parent-child queries) without knowing domain specifics.
+**Key Insight:** Framework uses `RelationSemantics` for traversal logic (e.g., follow HIERARCHICAL for parent-child queries) without knowing domain specifics.
 
 ### 2. Intelligent Retrieval with 3-Level Fallback
 
@@ -772,7 +771,7 @@ Benefit: "Products for user Z" combines graph + vector for hybrid recommendation
 ## References
 
 - **DDSE Foundation:** [https://ddse-foundation.github.io/](https://ddse-foundation.github.io/)
-- **Documentation:** [docs/ADR-002.md](./ADR-002.md), [docs/requirements.md](./requirements.md)
+- **Documentation:** See root `/docs` folder for ADR-002.md and requirements.md
 - **Related Research:**
   - GraphRAG (Microsoft Research, 2024)
   - Multi-Hop Reasoning over Knowledge Graphs (Stanford, 2023)

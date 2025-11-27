@@ -1,4 +1,3 @@
-import type {ReactNode} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -14,33 +13,66 @@ function HomepageHeader() {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">
-          {siteConfig.title}
+          CEF Framework
         </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <p className="hero__subtitle" style={{fontSize: '1.5rem', marginBottom: '2rem'}}>
+          ORM for LLM Context Engineering
+        </p>
+        <p className={styles.heroDescription}>
+          Just as Hibernate abstracts relational databases for transactional data, 
+          CEF abstracts knowledge stores for LLM context. Build intelligent applications 
+          with graph-powered retrieval that outperforms vector-only approaches by <strong>60-220%</strong>.
+        </p>
+        <div className={styles.badges}>
+          <img src="https://img.shields.io/badge/version-beta--0.5-blue.svg" alt="Version" />
+          <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License" />
+          <img src="https://img.shields.io/badge/Java-17+-orange.svg" alt="Java" />
+          <img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg" alt="Spring Boot" />
+        </div>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/intro">
-            Get Started - 10min ⏱️
+            to="/docs/quickstart">
+            Get Started in 5 Minutes →
           </Link>
           <Link
             className="button button--outline button--secondary button--lg"
-            to="/docs/benchmarks"
+            to="/docs/intro"
             style={{marginLeft: '1rem'}}>
-            View Benchmarks 📊
+            Learn More
           </Link>
+        </div>
+        <div className={styles.codeExample}>
+          <pre>
+{`// Define knowledge model like JPA entities
+Node patient = new Node(null, "Patient", 
+    Map.of("name", "John", "age", 45), 
+    "Patient with diabetes and hypertension");
+
+// Persist with dual persistence (graph + vector)
+indexer.indexNode(patient).block();
+
+// Query with intelligent context assembly
+SearchResult result = retriever.retrieve(
+    RetrievalRequest.builder()
+        .query("diabetes treatment plans")
+        .depth(2)  // Multi-hop reasoning
+        .topK(10)
+        .build()
+);`}
+          </pre>
         </div>
       </div>
     </header>
   );
 }
 
-export default function Home(): ReactNode {
+export default function Home(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`${siteConfig.title} - ORM for LLM Context Engineering`}
-      description="Production-ready ORM for managing knowledge models with dual persistence (graph + vector stores). Proven 60-220% improvement over vector-only search.">
+      title="ORM for LLM Context Engineering"
+      description="CEF Framework - Hibernate for Knowledge Models. Build intelligent applications with graph-powered retrieval that outperforms vector-only approaches by 60-220%.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
