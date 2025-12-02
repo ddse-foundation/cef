@@ -5,13 +5,12 @@ import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;
 import org.ddse.ml.cef.fixtures.LegalDomainFixtures;
 import org.ddse.ml.cef.fixtures.MedicalDomainFixtures;
-import org.ddse.ml.cef.repository.ChunkRepository;
-import org.ddse.ml.cef.repository.EdgeRepository;
-import org.ddse.ml.cef.repository.NodeRepository;
+import org.ddse.ml.cef.repository.postgres.ChunkRepository;
+import org.ddse.ml.cef.repository.postgres.EdgeRepository;
+import org.ddse.ml.cef.repository.postgres.NodeRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -24,7 +23,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URI;
@@ -80,7 +78,8 @@ import java.util.List;
  */
 @SpringBootTest(properties = {
         "spring.sql.init.mode=always",
-        "spring.sql.init.schema-locations=classpath:schema-postgresql-simple.sql"
+        "spring.sql.init.schema-locations=classpath:schema-postgresql-simple.sql",
+        "cef.database.type=postgresql"
 })
 @Testcontainers
 public abstract class BaseLLMIntegrationTest {

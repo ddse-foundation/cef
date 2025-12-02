@@ -7,7 +7,7 @@ import org.ddse.ml.cef.indexer.KnowledgeIndexer;
 import org.ddse.ml.cef.parser.ParsedDocument;
 import org.ddse.ml.cef.parser.ParserOptions;
 import org.ddse.ml.cef.parser.impl.CsvParser;
-import org.ddse.ml.cef.storage.GraphStore;
+import org.ddse.ml.cef.graph.GraphStore;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;

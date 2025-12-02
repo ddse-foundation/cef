@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.duckdb;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,6 @@ import reactor.core.scheduler.Schedulers;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

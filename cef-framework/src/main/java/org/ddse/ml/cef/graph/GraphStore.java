@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.storage;
+package org.ddse.ml.cef.graph;
 
 import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;

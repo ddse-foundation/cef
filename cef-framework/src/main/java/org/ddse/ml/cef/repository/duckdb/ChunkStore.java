@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.duckdb;
 
 import org.ddse.ml.cef.domain.Chunk;
 import reactor.core.publisher.Flux;

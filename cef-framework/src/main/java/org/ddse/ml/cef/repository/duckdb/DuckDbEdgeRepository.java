@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.duckdb;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

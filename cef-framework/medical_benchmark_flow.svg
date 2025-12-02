@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <!-- Definitions for arrowheads -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#333">MedicalBenchmarkTest Flow</text>
+
+  <!-- Start Node -->
+  <g transform="translate(300, 80)">
+    <rect x="0" y="0" width="200" height="50" rx="10" fill="#4a90e2" stroke="#333" stroke-width="2"/>
+    <text x="100" y="30" text-anchor="middle" font-family="Arial" font-size="14" fill="white">generateBenchmarkReport()</text>
+  </g>
+
+  <!-- Arrow Down -->
+  <line x1="400" y1="130" x2="400" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Scenario Loop Container -->
+  <rect x="50" y="170" width="700" height="650" rx="15" fill="none" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="70" y="195" font-family="Arial" font-size="16" fill="#666" font-weight="bold">For Each Scenario (1-4)</text>
+
+  <!-- runScenario Node -->
+  <g transform="translate(300, 210)">
+    <rect x="0" y="0" width="200" height="40" rx="5" fill="#fff" stroke="#333" stroke-width="2"/>
+    <text x="100" y="25" text-anchor="middle" font-family="Arial" font-size="14">runScenario()</text>
+  </g>
+
+  <!-- Split Paths -->
+  <line x1="400" y1="250" x2="400" y2="280" stroke="#333" stroke-width="2"/>
+  <line x1="200" y1="280" x2="600" y2="280" stroke="#333" stroke-width="2"/>
+  <line x1="200" y1="280" x2="200" y2="310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="600" y1="280" x2="600" y2="310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Path 1: Vector Only -->
+  <g transform="translate(50, 310)">
+    <rect x="0" y="0" width="220" height="300" rx="10" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+    <text x="110" y="30" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#1565c0">Vector-Only</text>
+    
+    <!-- Step 1 -->
+    <rect x="30" y="50" width="160" height="30" rx="3" fill="#fff" stroke="#1565c0"/>
+    <text x="110" y="70" text-anchor="middle" font-family="Arial" font-size="12">runVectorOnly()</text>
+    
+    <!-- Arrow -->
+    <line x1="110" y1="80" x2="110" y2="100" stroke="#1565c0" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 2 -->
+    <rect x="30" y="100" width="160" height="40" rx="3" fill="#fff" stroke="#1565c0"/>
+    <text x="110" y="125" text-anchor="middle" font-family="Arial" font-size="12">retriever.retrieve(query)</text>
+    
+    <!-- Arrow -->
+    <line x1="110" y1="140" x2="110" y2="160" stroke="#1565c0" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Embedding Call -->
+    <rect x="30" y="160" width="160" height="40" rx="3" fill="#f3e5f5" stroke="#7b1fa2" stroke-dasharray="4,2"/>
+    <text x="110" y="185" text-anchor="middle" font-family="Arial" font-size="12" fill="#7b1fa2">Embedding Model</text>
+    
+    <!-- Arrow -->
+    <line x1="110" y1="200" x2="110" y2="220" stroke="#1565c0" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 3 -->
+    <rect x="30" y="220" width="160" height="40" rx="3" fill="#fff" stroke="#1565c0"/>
+    <text x="110" y="245" text-anchor="middle" font-family="Arial" font-size="12">Vector Search (TopK)</text>
+    
+    <!-- Result -->
+    <text x="110" y="280" text-anchor="middle" font-family="Arial" font-size="12" font-style="italic">Returns: Unstructured Chunks</text>
+  </g>
+
+  <!-- Path 2: Knowledge Model -->
+  <g transform="translate(500, 310)">
+    <rect x="0" y="0" width="240" height="420" rx="10" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
+    <text x="120" y="30" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#2e7d32">Hybrid / Graph</text>
+    
+    <!-- Step 1 -->
+    <rect x="40" y="50" width="160" height="30" rx="3" fill="#fff" stroke="#2e7d32"/>
+    <text x="120" y="70" text-anchor="middle" font-family="Arial" font-size="12">runKnowledgeModel()</text>
+    
+    <!-- Arrow -->
+    <line x1="120" y1="80" x2="120" y2="100" stroke="#2e7d32" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 2: Simulated LLM -->
+    <g>
+      <rect x="20" y="100" width="200" height="50" rx="3" fill="#fff3e0" stroke="#e65100" stroke-dasharray="4,2"/>
+      <text x="120" y="120" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold" fill="#e65100">buildGraphQuery()</text>
+      <text x="120" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#e65100">(Simulates LLM Agent Logic)</text>
+    </g>
+    
+    <!-- Arrow -->
+    <line x1="120" y1="150" x2="120" y2="170" stroke="#2e7d32" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 3 -->
+    <rect x="30" y="170" width="180" height="60" rx="3" fill="#fff" stroke="#2e7d32"/>
+    <text x="120" y="190" text-anchor="middle" font-family="Arial" font-size="11">1. ResolutionTarget (Vector)</text>
+    <text x="120" y="210" text-anchor="middle" font-family="Arial" font-size="11">2. GraphPattern (Structure)</text>
+    
+    <!-- Arrow -->
+    <line x1="120" y1="230" x2="120" y2="250" stroke="#2e7d32" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Embedding Call -->
+    <rect x="40" y="250" width="160" height="40" rx="3" fill="#f3e5f5" stroke="#7b1fa2" stroke-dasharray="4,2"/>
+    <text x="120" y="275" text-anchor="middle" font-family="Arial" font-size="12" fill="#7b1fa2">Embedding Model</text>
+
+    <!-- Arrow -->
+    <line x1="120" y1="290" x2="120" y2="310" stroke="#2e7d32" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 4 -->
+    <rect x="40" y="310" width="160" height="40" rx="3" fill="#fff" stroke="#2e7d32"/>
+    <text x="120" y="335" text-anchor="middle" font-family="Arial" font-size="12">retriever.retrieve(...)</text>
+    
+    <!-- Arrow -->
+    <line x1="120" y1="350" x2="120" y2="370" stroke="#2e7d32" stroke-width="1" marker-end="url(#arrowhead)"/>
+    
+    <!-- Step 5 -->
+    <rect x="40" y="370" width="160" height="40" rx="3" fill="#fff" stroke="#2e7d32"/>
+    <text x="120" y="395" text-anchor="middle" font-family="Arial" font-size="12">Graph Traversal (DuckDB)</text>
+  </g>
+
+  <!-- Merge Paths -->
+  <line x1="200" y1="560" x2="200" y2="720" stroke="#333" stroke-width="2"/>
+  <line x1="600" y1="690" x2="600" y2="720" stroke="#333" stroke-width="2"/>
+  <line x1="200" y1="720" x2="400" y2="720" stroke="#333" stroke-width="2"/>
+  <line x1="600" y1="720" x2="400" y2="720" stroke="#333" stroke-width="2"/>
+  <line x1="400" y1="720" x2="400" y2="740" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Comparison Node -->
+  <g transform="translate(300, 740)">
+    <rect x="0" y="0" width="200" height="60" rx="5" fill="#fff3e0" stroke="#ef6c00" stroke-width="2"/>
+    <text x="100" y="25" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold">Compare &amp; Analyze</text>
+    <text x="100" y="45" text-anchor="middle" font-family="Arial" font-size="12">writeComparisonTable()</text>
+  </g>
+
+  <!-- Arrow Down -->
+  <line x1="400" y1="800" x2="400" y2="850" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Output Node -->
+  <g transform="translate(300, 850)">
+    <path d="M0,0 L160,0 L200,40 L200,80 L0,80 Z" fill="#e0e0e0" stroke="#333" stroke-width="2"/>
+    <polyline points="160,0 160,40 200,40" fill="none" stroke="#333" stroke-width="2"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold">Report File</text>
+    <text x="100" y="55" text-anchor="middle" font-family="Monospace" font-size="12">BENCHMARK_REPORT.md</text>
+  </g>
+
+</svg>

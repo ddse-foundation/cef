@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.storage;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Chunk;
 import reactor.core.publisher.Flux;

@@ -1,9 +1,6 @@
-package org.ddse.ml.cef.storage.postgres;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Chunk;
-import org.ddse.ml.cef.repository.ChunkRepository;
-import org.ddse.ml.cef.storage.VectorStats;
-import org.ddse.ml.cef.storage.VectorStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

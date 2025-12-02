@@ -1,9 +1,9 @@
 package org.ddse.ml.cef.base;
 
-import org.ddse.ml.cef.repository.ChunkRepository;
-import org.ddse.ml.cef.repository.EdgeRepository;
-import org.ddse.ml.cef.repository.NodeRepository;
-import org.ddse.ml.cef.repository.RelationTypeRepository;
+import org.ddse.ml.cef.repository.postgres.ChunkRepository;
+import org.ddse.ml.cef.repository.postgres.EdgeRepository;
+import org.ddse.ml.cef.repository.postgres.NodeRepository;
+import org.ddse.ml.cef.repository.postgres.RelationTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;

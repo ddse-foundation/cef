@@ -1,11 +1,12 @@
-package org.ddse.ml.cef.storage;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;
 import org.ddse.ml.cef.domain.RelationType;
 import org.ddse.ml.cef.graph.InMemoryKnowledgeGraph;
-import org.ddse.ml.cef.repository.EdgeRepository;
-import org.ddse.ml.cef.repository.NodeRepository;
+import org.ddse.ml.cef.graph.GraphStats;
+import org.ddse.ml.cef.graph.GraphStore;
+import org.ddse.ml.cef.graph.GraphSubgraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

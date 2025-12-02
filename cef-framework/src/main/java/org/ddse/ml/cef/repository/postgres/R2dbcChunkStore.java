@@ -1,6 +1,7 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Chunk;
+import org.ddse.ml.cef.repository.duckdb.ChunkStore;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import reactor.core.publisher.Flux;

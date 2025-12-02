@@ -1,13 +1,11 @@
-package org.ddse.ml.cef.storage.r2dbc;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;
 import org.ddse.ml.cef.domain.RelationType;
-import org.ddse.ml.cef.repository.EdgeRepository;
-import org.ddse.ml.cef.repository.NodeRepository;
-import org.ddse.ml.cef.storage.GraphStats;
-import org.ddse.ml.cef.storage.GraphStore;
-import org.ddse.ml.cef.storage.GraphSubgraph;
+import org.ddse.ml.cef.graph.GraphStats;
+import org.ddse.ml.cef.graph.GraphStore;
+import org.ddse.ml.cef.graph.GraphSubgraph;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

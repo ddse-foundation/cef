@@ -4,9 +4,8 @@ import org.ddse.ml.cef.retriever.RetrievalResult;
 import org.ddse.ml.cef.config.OllamaLlmTestConfiguration;
 import org.ddse.ml.cef.domain.Chunk;
 import org.ddse.ml.cef.domain.Node;
-import org.ddse.ml.cef.repository.ChunkRepository;
-import org.ddse.ml.cef.storage.GraphStore;
-import org.junit.jupiter.api.BeforeEach;
+import org.ddse.ml.cef.repository.duckdb.ChunkStore;
+import org.ddse.ml.cef.graph.GraphStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -52,7 +51,7 @@ class OllamaKnowledgeRetrieverIntegrationTest {
     private GraphStore graphStore;
 
     @Autowired
-    private ChunkRepository chunkRepository;
+    private ChunkStore chunkStore;
 
     @Autowired
     private KnowledgeRetriever retriever;
@@ -106,7 +105,7 @@ class OllamaKnowledgeRetrieverIntegrationTest {
                     chunk.setLinkedNodeId(nodeId);
                     return chunk;
                 }))
-                .flatMap(chunkRepository::save);
+                .flatMap(chunkStore::save);
 
         // Then - Query should find diabetes-related chunks, not weather
         String query = "What are diabetes symptoms?";

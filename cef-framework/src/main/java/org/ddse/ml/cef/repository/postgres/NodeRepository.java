@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Node;
 import org.springframework.data.r2dbc.repository.Query;

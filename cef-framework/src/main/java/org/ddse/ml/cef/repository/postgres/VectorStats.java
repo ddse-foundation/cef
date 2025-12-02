@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.storage;
+package org.ddse.ml.cef.repository.postgres;
 
 /**
  * Vector store statistics for monitoring.

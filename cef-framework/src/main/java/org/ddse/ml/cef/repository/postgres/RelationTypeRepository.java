@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.repository;
+package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.RelationSemantics;
 import org.ddse.ml.cef.domain.RelationType;

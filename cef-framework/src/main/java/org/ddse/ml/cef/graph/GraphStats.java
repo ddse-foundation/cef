@@ -1,4 +1,4 @@
-package org.ddse.ml.cef.storage;
+package org.ddse.ml.cef.graph;
 
 import java.util.Map;
 
