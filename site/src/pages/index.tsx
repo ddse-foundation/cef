@@ -24,7 +24,7 @@ function HomepageHeader() {
           intelligent context models in minutes, without the complexity of enterprise graph infrastructure.
         </p>
         <div className={styles.badges}>
-          <img src="https://img.shields.io/badge/version-beta--0.5-blue.svg" alt="Version" />
+          <img src="https://img.shields.io/badge/version-v0.6-blue.svg" alt="Version" />
           <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License" />
           <img src="https://img.shields.io/badge/Java-17+-orange.svg" alt="Java" />
           <img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg" alt="Spring Boot" />
