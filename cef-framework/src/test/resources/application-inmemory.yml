@@ -1,0 +1,32 @@
+# In-Memory Backend Profile Configuration
+# Activate with: @ActiveProfiles("inmemory")
+#
+# Zero external dependencies - no database required.
+# Uses JGraphT for graph and ConcurrentHashMap for vectors.
+
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  # Graph store: In-memory JGraphT
+  graph:
+    store: in-memory
+  
+  # Vector store: In-memory ConcurrentHashMap
+  vector:
+    store: in-memory
+    dimension: 768  # nomic-embed-text dimension
+  
+  embedding:
+    batch-size: 10
+    dimensions: 768
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG

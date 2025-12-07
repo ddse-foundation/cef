@@ -533,9 +533,8 @@ public class DefaultContextRetriever implements ContextRetriever {
                                 : RankingStrategy.PATH_LENGTH;
 
                         pathsMono = Flux.fromIterable(graphQuery.patterns())
-                                .flatMap(pattern -> Mono.fromCallable(() -> patternExecutor.executePattern(pattern,
-                                        entrySet, request.topK(), ranking)))
-                                .flatMapIterable(list -> list)
+                                .flatMap(pattern -> patternExecutor.executePattern(pattern,
+                                        entrySet, request.topK(), ranking))
                                 .collectList();
                     } else {
                         log.warn(
@@ -601,8 +600,8 @@ public class DefaultContextRetriever implements ContextRetriever {
                 : RankingStrategy.PATH_LENGTH;
 
         return Flux.fromIterable(patterns)
-                .flatMap(pattern -> Mono
-                        .fromCallable(() -> patternExecutor.executePattern(pattern, entryPoints, maxPaths, ranking)))
+                .flatMap(pattern -> patternExecutor.executePattern(pattern, entryPoints, maxPaths, ranking)
+                        .collectList())
                 .collectList()
                 .map(allResults -> {
                     switch (combinator.type()) {

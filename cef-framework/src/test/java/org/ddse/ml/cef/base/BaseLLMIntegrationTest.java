@@ -79,7 +79,7 @@ import java.util.List;
 @SpringBootTest(properties = {
         "spring.sql.init.mode=always",
         "spring.sql.init.schema-locations=classpath:schema-postgresql-simple.sql",
-        "cef.database.type=postgresql"
+        "cef.vector.store=postgresql"
 })
 @Testcontainers
 public abstract class BaseLLMIntegrationTest {

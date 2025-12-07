@@ -6,10 +6,8 @@ import org.ddse.ml.cef.config.CefProperties;
 import org.ddse.ml.cef.domain.Chunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -23,9 +21,10 @@ import java.util.UUID;
 /**
  * JDBC implementation of ChunkStore for DuckDB.
  * Wraps blocking JDBC calls in reactive types.
+ * 
+ * <p><b>Note:</b> This class is NOT a @Component. It is created by ChunkStoreAutoConfiguration
+ * when cef.vector.store=duckdb (or not specified, as DuckDB is the default).</p>
  */
-@Component
-@ConditionalOnProperty(name = "cef.database.type", havingValue = "duckdb", matchIfMissing = true)
 public class DuckDbChunkStore implements ChunkStore {
 
     private static final Logger log = LoggerFactory.getLogger(DuckDbChunkStore.class);

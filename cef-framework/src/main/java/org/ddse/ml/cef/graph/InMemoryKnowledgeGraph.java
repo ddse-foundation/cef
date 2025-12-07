@@ -10,7 +10,6 @@ import org.jgrapht.graph.DirectedWeightedPseudograph;
 import org.jgrapht.traverse.BreadthFirstIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.*;
@@ -21,11 +20,13 @@ import java.util.stream.Collectors;
  * In-memory knowledge graph using JGraphT for fast traversal operations.
  * Provides O(1) node lookups and efficient graph algorithms.
  * 
+ * <p>This class is NOT a Spring component by default. It should only be instantiated
+ * by GraphStoreAutoConfiguration when cef.graph.store=in-memory is set.</p>
+ * 
  * Thread-safe: Uses ConcurrentHashMap for indexes.
  * 
  * @author mrmanna
  */
-@Component
 public class InMemoryKnowledgeGraph {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryKnowledgeGraph.class);

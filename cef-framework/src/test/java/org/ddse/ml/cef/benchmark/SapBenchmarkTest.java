@@ -2,6 +2,7 @@ package org.ddse.ml.cef.benchmark;
 
 import org.ddse.ml.cef.parser.impl.CsvParser;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@DisplayName("Benchmark: SAP Knowledge Model")
+/**
+ * SAP benchmark test comparing Vector-Only vs Knowledge Model retrieval.
+ * 
+ * <p><b>DEPRECATED:</b> Use {@link org.ddse.ml.cef.benchmark.runner.InMemoryBenchmarkIT}
+ * instead, which outputs JSON results compatible with Python evaluation scripts.</p>
+ * 
+ * @deprecated Use InMemoryBenchmarkIT for JSON-compatible benchmark output
+ */
+@Deprecated
+@DisplayName("Benchmark: SAP Knowledge Model (Legacy)")
+@Disabled("Deprecated: Use InMemoryBenchmarkIT which outputs JSON for Python evaluation scripts")
 class SapBenchmarkTest extends BenchmarkBase {
 
     private static final String REPORT_FILE = "SAP_BENCHMARK_REPORT.md";

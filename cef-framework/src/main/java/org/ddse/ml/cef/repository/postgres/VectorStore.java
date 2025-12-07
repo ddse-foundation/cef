@@ -11,13 +11,12 @@ import java.util.UUID;
  * Pluggable interface for vector storage backends.
  * 
  * Implementations:
- * - PostgresVectorStore: pgvector extension (default)
- * - DuckDBVectorStore: DuckDB with vector functions
- * - QdrantVectorStore: Qdrant vector database
- * - PineconeVectorStore: Pinecone managed service
+ * - DuckDbChunkStore: DuckDB with VSS extension (default)
+ * - R2dbcChunkStore: PostgreSQL with pgvector
+ * - Neo4jChunkStore: Neo4j with vector index
  * 
  * Framework selects implementation based on application.yml:
- * cef.vector.store: postgres | duckdb | qdrant | pinecone
+ * cef.vector.store: duckdb | postgresql | neo4j
  *
  * @author mrmanna
  */

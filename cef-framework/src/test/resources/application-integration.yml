@@ -1,0 +1,94 @@
+# Full Integration Test Configuration for CEF Framework
+# Uses: Neo4j (graph), PostgreSQL/pgvector (vector), Ollama (embeddings)
+# 
+# Start infrastructure: docker-compose up -d postgres neo4j ollama
+# Run tests: mvn test -Dspring.profiles.active=integration
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+      chat:
+        enabled: true
+        options:
+          model: llama3.2:3b
+          temperature: 0.7
+
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: cef_password
+
+cef:
+  # Graph Store Configuration (Neo4j)
+  graph:
+    type: neo4j
+    thread-safe: true
+    in-memory: false
+    load-on-startup: false
+  
+  # Vector Store Configuration (PostgreSQL/pgvector)
+  vector:
+    store: postgresql
+    dimension: 768
+    table-name: cef_vectors
+    index-type: hnsw
+  
+  # Embedding Configuration
+  embedding:
+    batch-size: 32
+    dimensions: 768
+    provider: ollama
+  
+  # Resilience Configuration
+  resilience:
+    enabled: true
+    retry:
+      max-attempts: 3
+      wait-duration: 1s
+      exponential-backoff-multiplier: 2.0
+    circuit-breaker:
+      failure-rate-threshold: 50
+      slow-call-rate-threshold: 80
+      slow-call-duration-threshold: 5s
+      wait-duration-in-open-state: 30s
+      permitted-calls-in-half-open-state: 5
+      minimum-number-of-calls: 10
+      sliding-window-size: 20
+    timeout:
+      duration: 30s
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  health:
+    neo4j:
+      enabled: true
+    db:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.ai: DEBUG
+    org.neo4j: INFO
+    org.postgresql: INFO

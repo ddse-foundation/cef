@@ -3,8 +3,6 @@ package org.ddse.ml.cef.repository.postgres;
 import org.ddse.ml.cef.domain.Chunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,7 +12,8 @@ import java.util.UUID;
 /**
  * Vector store implementation using PostgreSQL with pgvector extension.
  * 
- * Default vector store for CEF framework.
+ * <p><b>Note:</b> This class is NOT a @Component. Use R2dbcChunkStore which is
+ * created by ChunkStoreAutoConfiguration when cef.vector.store=postgresql.</p>
  * 
  * Prerequisites:
  * - PostgreSQL 12+
@@ -25,8 +24,6 @@ import java.util.UUID;
  *
  * @author mrmanna
  */
-@Component("postgresVectorStore")
-@ConditionalOnProperty(name = "cef.vector.store", havingValue = "postgres", matchIfMissing = true)
 public class PostgresVectorStore implements VectorStore {
 
     private static final Logger log = LoggerFactory.getLogger(PostgresVectorStore.class);

@@ -1,0 +1,141 @@
+{
+  "backend" : "duckdb",
+  "dataset" : "sap",
+  "timestamp" : "2025-12-07T15:03:45.080323104Z",
+  "datasetStats" : {
+    "nodes" : 60,
+    "edges" : 121,
+    "labels" : [ "Project", "Department", "Invoice", "CostCenter", "CustomerOrder", "Product", "Event", "Material", "Vendor", "FinancialStatus", "Location" ]
+  },
+  "scenarios" : [ {
+    "name" : "Supply Chain Disruption Impact",
+    "description" : "Find customer orders at risk due to natural disaster affecting component suppliers. Requires: Event→AFFECTS_LOCATION→Location→LOCATED_IN→Vendor→SUPPLIES→Material→COMPOSED_OF→Product→ORDERS",
+    "query" : "Which customer orders will be delayed due to the Taiwan typhoon affecting our component suppliers",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 1,
+    "vectorLatencyMs" : {
+      "p50" : 21,
+      "p95" : 23,
+      "p99" : 23,
+      "min" : 18,
+      "max" : 23,
+      "avg" : 20.8
+    },
+    "kmLatencyMs" : {
+      "p50" : 39,
+      "p95" : 46,
+      "p99" : 46,
+      "min" : 39,
+      "max" : 46,
+      "avg" : 40.6
+    },
+    "graphNodesTraversed" : 2,
+    "patternsExecuted" : [ "Event→AFFECTS_LOCATION→*", "Event→LOCATED_IN→*", "Event→SUPPLIES→*", "Event→COMPOSED_OF→*", "Event→ORDERS→*" ],
+    "totalTimeMs" : 429
+  }, {
+    "name" : "Budget Contagion via Shared Vendors",
+    "description" : "Find departments at financial risk due to shared vendor dependencies with overrun departments. Requires: Dept[overrun]→HAS_COST_CENTER→CC→PAYS→Vendor→SUPPLIES→Material→USED_IN→Project→FUNDED_BY→Dept2",
+    "query" : "Which departments share vendors with the Engineering department that has budget overruns",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 8,
+    "vectorLatencyMs" : {
+      "p50" : 20,
+      "p95" : 22,
+      "p99" : 22,
+      "min" : 17,
+      "max" : 22,
+      "avg" : 19.8
+    },
+    "kmLatencyMs" : {
+      "p50" : 50,
+      "p95" : 57,
+      "p99" : 57,
+      "min" : 44,
+      "max" : 57,
+      "avg" : 49.6
+    },
+    "graphNodesTraversed" : 9,
+    "patternsExecuted" : [ "Department→HAS_COST_CENTER→*", "Department→PAYS→*", "Department→SUPPLIES→*", "Department→USED_IN→*", "Department→FUNDED_BY→*", "Department→HAS_OVERRUN→*" ],
+    "totalTimeMs" : 488
+  }, {
+    "name" : "Critical Component Single Sourcing Risk",
+    "description" : "Find products with components that have only one supplier (single point of failure). Requires: Product→COMPOSED_OF→Material→SUPPLIED_BY→Vendor with cardinality check",
+    "query" : "Which products have critical components sourced from only one vendor creating supply chain vulnerability",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 5,
+    "vectorLatencyMs" : {
+      "p50" : 23,
+      "p95" : 27,
+      "p99" : 27,
+      "min" : 21,
+      "max" : 27,
+      "avg" : 23.2
+    },
+    "kmLatencyMs" : {
+      "p50" : 51,
+      "p95" : 57,
+      "p99" : 57,
+      "min" : 50,
+      "max" : 57,
+      "avg" : 53.0
+    },
+    "graphNodesTraversed" : 0,
+    "patternsExecuted" : [ "Product→COMPOSED_OF→*", "Product→SUPPLIED_BY→*" ],
+    "totalTimeMs" : 533
+  }, {
+    "name" : "Project Overrun Root Cause Analysis",
+    "description" : "Find external factors (events, vendor issues) contributing to project budget overruns. Requires: Project[OVERRUN]←USED_IN←Material→SUPPLIED_BY→Vendor→LOCATED_IN→Location←AFFECTS←Event",
+    "query" : "What external events or vendor issues are causing the Holiday Laptop project to run over budget",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 5,
+    "vectorLatencyMs" : {
+      "p50" : 22,
+      "p95" : 25,
+      "p99" : 25,
+      "min" : 21,
+      "max" : 25,
+      "avg" : 22.4
+    },
+    "kmLatencyMs" : {
+      "p50" : 49,
+      "p95" : 56,
+      "p99" : 56,
+      "min" : 46,
+      "max" : 56,
+      "avg" : 50.4
+    },
+    "graphNodesTraversed" : 0,
+    "patternsExecuted" : [ "Project→USED_IN→*", "Project→SUPPLIED_BY→*", "Project→LOCATED_IN→*", "Project→AFFECTS_LOCATION→*" ],
+    "totalTimeMs" : 516
+  }, {
+    "name" : "Cross-Department Invoice Anomaly Detection",
+    "description" : "Find invoices paid to vendors not in the department's approved vendor list. Requires: Invoice→PAID_TO→Vendor comparison with Department→HAS_BUDGET→Budget[approved_vendors]",
+    "query" : "Which invoices were paid to vendors outside the department's pre-approved supplier list",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 9,
+    "vectorLatencyMs" : {
+      "p50" : 28,
+      "p95" : 31,
+      "p99" : 31,
+      "min" : 24,
+      "max" : 31,
+      "avg" : 27.8
+    },
+    "kmLatencyMs" : {
+      "p50" : 51,
+      "p95" : 53,
+      "p99" : 53,
+      "min" : 43,
+      "max" : 53,
+      "avg" : 49.8
+    },
+    "graphNodesTraversed" : 9,
+    "patternsExecuted" : [ "Invoice→PAID_TO→*", "Invoice→INCURRED_BY→*", "Invoice→BELONGS_TO→*", "Invoice→HAS_BUDGET→*" ],
+    "totalTimeMs" : 531
+  } ],
+  "summary" : {
+    "avgChunkImprovement" : 12.0,
+    "avgLatencyOverhead" : 112.46470920383965,
+    "totalBenchmarkTimeMs" : 2497
+  }
+}

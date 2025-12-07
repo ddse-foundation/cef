@@ -1,0 +1,32 @@
+# PostgreSQL SQL Backend Profile Configuration
+# Activate with: @ActiveProfiles("pg-sql")
+#
+# Prerequisites:
+# - PostgreSQL with pgvector running on localhost:5432 (for vectors AND graph)
+# - Start with: docker compose up postgres
+
+spring:
+  # Datasource for Graph Store (SQL Tables on port 5432)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+
+  # R2DBC for Vector Store (pgvector on port 5432)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+
+cef:
+  graph:
+    store: pg-sql
+    postgres:
+      graph-name: cef_benchmark_graph # Not used by pg-sql but good to have
+  vector:
+    store: postgresql

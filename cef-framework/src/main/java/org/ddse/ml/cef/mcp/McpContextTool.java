@@ -52,23 +52,30 @@ public class McpContextTool implements FunctionCallback {
 
     @Override
     public String getName() {
+        log.debug("=== [MCP Tool] getName called, returning: retrieve_context ===");
         return "retrieve_context";
     }
 
     @Override
     public String getDescription() {
-        return "Retrieve context using Vector-First Resolution with optional Graph Patterns. " +
+        String desc = "Retrieve context using Vector-First Resolution with optional Graph Patterns. " +
                 "You MUST provide a 'graphQuery' with 'targets' to resolve specific entities in the Knowledge Graph. " +
                 "The system resolves these targets first, then traverses the graph to enrich vector search results. " +
                 "For multi-hop structured queries, you can specify 'patterns' in graphQuery to define explicit traversal paths with constraints. "
                 +
                 "Example pattern: Patient->DIAGNOSED_WITH->Disease->TREATED_WITH->Treatment with constraints on properties.";
+        log.debug("=== [MCP Tool] getDescription called ===");
+        log.debug("Description: {}", desc);
+        return desc;
     }
 
     @Override
     public String getInputTypeSchema() {
         try {
-            return objectMapper.writeValueAsString(getToolSchema().get("parameters"));
+            String schema = objectMapper.writeValueAsString(getToolSchema().get("parameters"));
+            log.info("=== [MCP Tool] getInputTypeSchema called ===");
+            log.info("Schema being sent to LLM:\n{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(getToolSchema().get("parameters")));
+            return schema;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize tool schema", e);
         }

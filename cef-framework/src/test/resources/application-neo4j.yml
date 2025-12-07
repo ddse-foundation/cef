@@ -1,0 +1,39 @@
+# Neo4j Backend Profile Configuration
+# Activate with: @ActiveProfiles("neo4j")
+#
+# Prerequisites:
+# - Neo4j 5.11+ running on localhost:7687
+# - Start with: docker run -d --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=none neo4j:5.18-community
+
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  # Graph store: Neo4j native graph database
+  graph:
+    store: neo4j
+    neo4j:
+      uri: ${NEO4J_URI:bolt://localhost:7687}
+      username: ${NEO4J_USER:neo4j}
+      password: ${NEO4J_PASSWORD:cef_password}
+      database: neo4j
+  
+  # Vector store: Neo4j vector indexes (5.11+)
+  vector:
+    store: neo4j
+    dimension: 768  # nomic-embed-text dimension
+  
+  embedding:
+    batch-size: 10
+    dimensions: 768
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.neo4j.driver: INFO

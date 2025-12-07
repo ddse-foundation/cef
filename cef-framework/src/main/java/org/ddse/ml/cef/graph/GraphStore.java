@@ -13,12 +13,14 @@ import java.util.UUID;
  * Pluggable interface for graph storage backends.
  * 
  * Implementations:
- * - JGraphTGraphStore: In-memory (default, <100K nodes)
- * - Neo4jGraphStore: Persistent graph database (millions of nodes)
- * - TinkerPopGraphStore: Graph abstraction layer (Gremlin support)
+ * - DuckDbGraphStore: Pure SQL on DuckDB (default)
+ * - InMemoryGraphStore: In-memory JGraphT (<100K nodes)
+ * - Neo4jGraphStore: Native Neo4j graph database
+ * - PgSqlGraphStore: Pure SQL on PostgreSQL
+ * - PgAgeGraphStore: Cypher via Apache AGE on PostgreSQL
  * 
  * Framework selects implementation based on application.yml:
- * cef.graph.store: jgrapht | neo4j | tinkerpop
+ * cef.graph.store: duckdb | in-memory | neo4j | pg-sql | pg-age
  *
  * @author mrmanna
  */
@@ -119,4 +121,13 @@ public interface GraphStore {
      * Batch load edges (optimized bulk insert).
      */
     Flux<Edge> batchAddEdges(List<Edge> edges);
+
+    /**
+     * Get all edges connected to a node (incoming and outgoing).
+     * Required for pattern-based traversal operations.
+     * 
+     * @param nodeId The node to get edges for
+     * @return Flux of all edges where this node is source or target
+     */
+    Flux<Edge> getEdgesForNode(UUID nodeId);
 }

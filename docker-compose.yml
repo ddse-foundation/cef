@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # PostgreSQL (Optional - for demonstrating agnosticism)
+  # PostgreSQL with pgvector (Vector Store)
   postgres:
     image: pgvector/pgvector:pg16
     container_name: cef-postgres
@@ -13,16 +11,58 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cef_user -d cef_db"]
       interval: 10s
       timeout: 5s
       retries: 5
-    profiles:
-      - postgres
 
-  # MinIO (Optional - for demonstrating blob storage)
+  # Neo4j Community Edition (Graph Store)
+  neo4j:
+    image: neo4j:5-community
+    container_name: cef-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/cef_password
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_dbms_memory_heap_initial__size: 512m
+      NEO4J_dbms_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # PostgreSQL with Apache AGE (Graph Store Alternative)
+  # Use this for graph storage without Neo4j dependency
+  # Supports native Cypher queries via AGE extension
+  postgres-age:
+    image: apache/age:latest
+    container_name: cef-postgres-age
+    environment:
+      POSTGRES_DB: cef_graph_db
+      POSTGRES_USER: cef_user
+      POSTGRES_PASSWORD: cef_password
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with pgvector postgres
+    volumes:
+      - postgres_age_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cef_user -d cef_graph_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - age  # Only start with: docker compose --profile age up
+
+  # MinIO (Optional - for blob storage)
   minio:
     image: minio/minio:latest
     container_name: cef-minio
@@ -60,45 +100,52 @@ services:
     profiles:
       - minio
 
-  # Ollama (Local LLM)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: cef-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_KEEP_ALIVE=24h
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+  # Ollama (Local LLM) - Commented out: Use local Ollama installation instead
+  # Uncomment if you want to run Ollama in Docker instead of locally
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: cef-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   environment:
+  #     - OLLAMA_KEEP_ALIVE=24h
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
 
-  # Ollama Model Puller (pulls models on startup)
-  ollama-setup:
-    image: curlimages/curl:latest
-    container_name: cef-ollama-setup
-    depends_on:
-      ollama:
-        condition: service_healthy
-    command: >
-      sh -c "
-      echo 'Pulling llama3.2:3b model...';
-      curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.2:3b\"}';
-      echo 'Model pull initiated';
-      "
-    restart: "no"
+  # Ollama Model Puller (pulls models on startup) - Requires ollama service above
+  # ollama-setup:
+  #   image: curlimages/curl:latest
+  #   container_name: cef-ollama-setup
+  #   depends_on:
+  #     ollama:
+  #       condition: service_healthy
+  #   command: >
+  #     sh -c "
+  #     echo 'Pulling llama3.2:3b model...';
+  #     curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.2:3b\"}';
+  #     echo 'Model pull initiated';
+  #     "
+  #   restart: "no"
 
 volumes:
   postgres_data:
     name: cef_postgres_data
+  postgres_age_data:
+    name: cef_postgres_age_data
+  neo4j_data:
+    name: cef_neo4j_data
+  neo4j_logs:
+    name: cef_neo4j_logs
   minio_data:
     name: cef_minio_data
-  ollama_data:
-    name: cef_ollama_data
+  # ollama_data:  # Uncomment if using Docker Ollama service
+  #   name: cef_ollama_data
 
 networks:
   default:

@@ -1,6 +1,6 @@
 package org.ddse.ml.cef.config;
 
-import org.ddse.ml.cef.repository.postgres.DualPersistenceGraphStore;
+import org.ddse.ml.cef.graph.GraphStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +16,18 @@ import org.springframework.context.annotation.ComponentScan;
  * Activated when application includes cef-framework dependency.
  * Configuration driven by application.yml properties.
  * 
- * Default configuration:
- * - Graph: InMemoryKnowledgeGraph with JGraphT (<100K nodes)
- * - VectorStore: Postgres with pgvector
- * - Embedding: OpenAI (configurable to Ollama)
+ * <h3>Graph Store Selection:</h3>
+ * <p>Graph stores are configured via {@link GraphStoreAutoConfiguration} based on
+ * the {@code cef.graph.store} property:</p>
+ * <ul>
+ *   <li><b>neo4j</b> - Neo4jGraphStore (native graph DB)</li>
+ *   <li><b>pg-age</b> - PgAgeGraphStore (Cypher on PostgreSQL)</li>
+ *   <li><b>pg-sql</b> - PgSqlGraphStore (pure SQL)</li>
+ *   <li><b>in-memory</b> - InMemoryGraphStore (JGraphT, default)</li>
+ * </ul>
+ * 
+ * <h3>Vector Store:</h3>
+ * <p>Configured via {@code cef.vector.store}: duckdb (default), postgresql, neo4j</p>
  *
  * @author mrmanna
  */
@@ -30,36 +38,24 @@ public class CefAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CefAutoConfiguration.class);
 
-    // Graph implementations are auto-discovered via @Component scan:
-    // - InMemoryKnowledgeGraph: Synchronous JGraphT implementation
-    // - InMemoryGraphStore: Reactive adapter wrapping InMemoryKnowledgeGraph
-    //
-    // Additional graph implementations will be added in future phases:
-    // - Neo4j integration (for millions of nodes)
-    // - TinkerPop/Gremlin support
-
-    // VectorStore implementations are auto-discovered via @Component scan:
-    // - PostgresVectorStore (@Component)
-    //
-    // Additional VectorStore implementations will be added in future phases:
-    // - DuckDBVectorStore
-    // - QdrantVectorStore
-    // - PineconeVectorStore
+    // Graph implementations are configured by GraphStoreAutoConfiguration:
+    // - DuckDbGraphStore: Pure SQL (cef.graph.store=duckdb)
+    // - Neo4jGraphStore: Native graph (cef.graph.store=neo4j)
+    // - PgAgeGraphStore: Cypher via AGE (cef.graph.store=pg-age)
+    // - PgSqlGraphStore: Pure SQL (cef.graph.store=pg-sql)
+    // - InMemoryGraphStore: JGraphT (default/in-memory)
 
     /**
-     * Initialize in-memory graph store on application startup.
-     * Loads all nodes and edges from database into memory.
-     * 
-     * This ensures dual persistence is maintained across application restarts.
+     * Log the configured GraphStore on startup.
      */
     @Bean
-    public ApplicationRunner graphStoreInitializer(
-            @Autowired(required = false) DualPersistenceGraphStore graphStore) {
+    public ApplicationRunner graphStoreLogger(
+            @Autowired(required = false) GraphStore graphStore) {
         return args -> {
             if (graphStore != null) {
-                log.info("Initializing in-memory graph from database...");
-                graphStore.loadFromDatabase().block();
-                log.info("✓ In-memory graph initialized from database");
+                log.info("✓ GraphStore configured: {}", graphStore.getClass().getSimpleName());
+            } else {
+                log.warn("⚠ No GraphStore configured");
             }
         };
     }

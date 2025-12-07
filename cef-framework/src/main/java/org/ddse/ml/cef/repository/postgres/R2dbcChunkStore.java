@@ -2,8 +2,6 @@ package org.ddse.ml.cef.repository.postgres;
 
 import org.ddse.ml.cef.domain.Chunk;
 import org.ddse.ml.cef.repository.duckdb.ChunkStore;
-import org.springframework.stereotype.Component;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -11,9 +9,10 @@ import java.util.UUID;
 
 /**
  * R2DBC implementation of ChunkStore (primarily for PostgreSQL).
+ * 
+ * <p><b>Note:</b> This class is NOT a @Component. It is created by ChunkStoreAutoConfiguration
+ * when cef.vector.store=postgresql is set.</p>
  */
-@Component
-@ConditionalOnProperty(name = "cef.database.type", havingValue = "postgresql")
 public class R2dbcChunkStore implements ChunkStore {
 
     private final ChunkRepository chunkRepository;

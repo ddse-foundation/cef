@@ -26,7 +26,7 @@ import java.util.UUID;
  * Mono.fromCallable().subscribeOn(Schedulers.boundedElastic()).
  */
 @Component
-@ConditionalOnProperty(name = "cef.database.type", havingValue = "duckdb", matchIfMissing = true)
+@ConditionalOnProperty(name = "cef.vector.store", havingValue = "duckdb", matchIfMissing = true)
 public class DuckDbNodeRepository {
 
     private static final Logger log = LoggerFactory.getLogger(DuckDbNodeRepository.class);

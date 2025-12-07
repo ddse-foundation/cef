@@ -1,5 +1,6 @@
 package org.ddse.ml.cef.benchmark;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,13 +9,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Benchmark test comparing Vector-Only (Naive RAG) vs Knowledge Model (Graph
- * RAG)
+ * Benchmark test comparing Vector-Only (Naive RAG) vs Knowledge Model (Graph RAG)
  * on medical clinical decision support scenarios.
  * 
+ * <p><b>DEPRECATED:</b> Use {@link org.ddse.ml.cef.benchmark.runner.InMemoryBenchmarkIT}
+ * instead, which outputs JSON results compatible with Python evaluation scripts.</p>
+ * 
  * Data is loaded once per class via MedicalDataTestBase inheritance.
+ * 
+ * @deprecated Use InMemoryBenchmarkIT for JSON-compatible benchmark output
  */
-@DisplayName("Benchmark: Medical Knowledge Model")
+@Deprecated
+@DisplayName("Benchmark: Medical Knowledge Model (Legacy)")
+@Disabled("Deprecated: Use InMemoryBenchmarkIT which outputs JSON for Python evaluation scripts")
 class MedicalBenchmarkTest extends BenchmarkBase {
 
     private static final String REPORT_FILE = "BENCHMARK_REPORT.md";

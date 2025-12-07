@@ -432,9 +432,7 @@ public class KnowledgeRetrieverImpl implements KnowledgeRetriever {
                             : org.ddse.ml.cef.dto.RankingStrategy.PATH_LENGTH;
 
                     return Flux.fromIterable(graphQuery.patterns())
-                            .flatMap(pattern -> Mono.fromCallable(
-                                    () -> patternExecutor.executePattern(pattern, entrySet, request.topK(), ranking)))
-                            .flatMapIterable(list -> list)
+                            .flatMap(pattern -> patternExecutor.executePattern(pattern, entrySet, request.topK(), ranking))
                             .collectList()
                             .flatMap(matchedPaths -> {
                                 if (matchedPaths.isEmpty()) {

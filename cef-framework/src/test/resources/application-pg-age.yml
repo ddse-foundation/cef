@@ -1,0 +1,56 @@
+# PostgreSQL AGE Backend Profile Configuration
+# Activate with: @ActiveProfiles("pg-age")
+#
+# Prerequisites:
+# - PostgreSQL with pgvector running on localhost:5432 (for vectors)
+# - PostgreSQL with Apache AGE running on localhost:5433 (for graph)
+# - Start with: docker compose --profile age up
+
+spring:
+  # Datasource for Graph Store (Apache AGE on port 5433)
+  datasource:
+    url: jdbc:postgresql://localhost:5433/cef_graph_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+
+  # R2DBC for Vector Store (pgvector on port 5432)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-postgresql.sql
+    password: cef_password
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        enabled: true
+        options:
+          model: nomic-embed-text:latest
+
+cef:
+  # Graph store: PostgreSQL with Apache AGE
+  graph:
+    store: pg-age
+    postgres:
+      graph-name: cef_benchmark_graph
+  
+  # Vector store: PostgreSQL with pgvector
+  vector:
+    store: postgresql
+  
+  embedding:
+    batch-size: 10
+    dimensions: 768
+
+logging:
+  level:
+    org.ddse.ml.cef: DEBUG
+    org.springframework.jdbc: INFO
+    org.springframework.r2dbc: INFO

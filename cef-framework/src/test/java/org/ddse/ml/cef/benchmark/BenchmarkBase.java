@@ -1,6 +1,7 @@
 package org.ddse.ml.cef.benchmark;
 
-import org.ddse.ml.cef.DuckDBTestConfiguration;
+import org.ddse.ml.cef.CefTestApplication;
+import org.ddse.ml.cef.config.DuckDbTestConfiguration;
 import org.ddse.ml.cef.config.VllmTestConfiguration;
 import org.ddse.ml.cef.base.MedicalDataTestBase;
 import org.ddse.ml.cef.api.KnowledgeRetriever;
@@ -32,8 +33,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@SpringBootTest(classes = DuckDBTestConfiguration.class, properties = "spring.main.allow-bean-definition-overriding=true")
-@Import({ VllmTestConfiguration.class })
+@SpringBootTest(classes = CefTestApplication.class, properties = {
+    "spring.main.allow-bean-definition-overriding=true",
+    "cef.graph.store=duckdb",
+    "cef.vector.store=duckdb"
+})
+@Import({ DuckDbTestConfiguration.class, VllmTestConfiguration.class })
 @ActiveProfiles({ "vllm-integration", "duckdb" })
 public abstract class BenchmarkBase extends MedicalDataTestBase {
 

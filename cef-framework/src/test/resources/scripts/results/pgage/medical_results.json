@@ -1,0 +1,141 @@
+{
+  "backend" : "pgage",
+  "dataset" : "medical",
+  "timestamp" : "2025-12-07T15:57:27.608319172Z",
+  "datasetStats" : {
+    "nodes" : 177,
+    "edges" : 455,
+    "labels" : [ "Condition", "Medication", "Patient", "Doctor" ]
+  },
+  "scenarios" : [ {
+    "name" : "Hidden Drug Interaction Chain",
+    "description" : "Find patients at risk for heart surgery complications due to undiscovered medication interactions. Requires: Surgery→PreOp_Medication→INTERACTS_WITH→Patient_Medication→Patient path",
+    "query" : "Which patients scheduled for cardiac procedures have medications that interact with standard pre-op drugs",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 9,
+    "vectorLatencyMs" : {
+      "p50" : 19,
+      "p95" : 22,
+      "p99" : 22,
+      "min" : 18,
+      "max" : 22,
+      "avg" : 19.4
+    },
+    "kmLatencyMs" : {
+      "p50" : 3822,
+      "p95" : 3916,
+      "p99" : 3916,
+      "min" : 3743,
+      "max" : 3916,
+      "avg" : 3837.2
+    },
+    "graphNodesTraversed" : 9,
+    "patternsExecuted" : [ "Patient→SCHEDULED_FOR→*", "Patient→HAS_CONDITION→*", "Patient→PRESCRIBED_MEDICATION→*", "Patient→INTERACTS_WITH→*" ],
+    "totalTimeMs" : 27179
+  }, {
+    "name" : "Transitive Infection Exposure Risk",
+    "description" : "Find patients potentially exposed to infectious diseases through shared healthcare providers. Requires traversing: Patient→TREATED_BY→Doctor→TREATED_BY→InfectedPatient→HAS_CONDITION→InfectiousDisease",
+    "query" : "Identify patients who share doctors with patients diagnosed with communicable diseases",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 13,
+    "vectorLatencyMs" : {
+      "p50" : 20,
+      "p95" : 28,
+      "p99" : 28,
+      "min" : 18,
+      "max" : 28,
+      "avg" : 21.6
+    },
+    "kmLatencyMs" : {
+      "p50" : 7237,
+      "p95" : 7612,
+      "p99" : 7612,
+      "min" : 6293,
+      "max" : 7612,
+      "avg" : 7000.4
+    },
+    "graphNodesTraversed" : 15,
+    "patternsExecuted" : [ "Patient→TREATED_BY→*", "Patient→HAS_CONDITION→*" ],
+    "totalTimeMs" : 47550
+  }, {
+    "name" : "Polypharmacy Cascade Risk",
+    "description" : "Find elderly patients at high fall risk due to multiple medication side effects combined with bone conditions. Requires aggregating: Patient→PRESCRIBED→Meds→CAUSES_SIDE_EFFECT→[Dizziness,Drowsiness] AND Patient→HAS_CONDITION→Osteoporosis",
+    "query" : "Which senior patients on multiple medications are at elevated fall risk due to combined drug side effects",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 13,
+    "vectorLatencyMs" : {
+      "p50" : 27,
+      "p95" : 30,
+      "p99" : 30,
+      "min" : 19,
+      "max" : 30,
+      "avg" : 25.2
+    },
+    "kmLatencyMs" : {
+      "p50" : 5686,
+      "p95" : 6607,
+      "p99" : 6607,
+      "min" : 5348,
+      "max" : 6607,
+      "avg" : 5949.2
+    },
+    "graphNodesTraversed" : 15,
+    "patternsExecuted" : [ "Patient→PRESCRIBED_MEDICATION→*", "Patient→CAUSES_SIDE_EFFECT→*", "Patient→HAS_CONDITION→*" ],
+    "totalTimeMs" : 42611
+  }, {
+    "name" : "Treatment Protocol Gap Detection",
+    "description" : "Find patients with conditions who are NOT receiving standard-of-care medications. Requires: Condition→STANDARD_TREATMENT→Medication comparison with Patient→PRESCRIBED→Medications",
+    "query" : "Identify patients with diabetes who are missing recommended first-line treatment medications",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 13,
+    "vectorLatencyMs" : {
+      "p50" : 22,
+      "p95" : 27,
+      "p99" : 27,
+      "min" : 18,
+      "max" : 27,
+      "avg" : 22.4
+    },
+    "kmLatencyMs" : {
+      "p50" : 5744,
+      "p95" : 6720,
+      "p99" : 6720,
+      "min" : 4774,
+      "max" : 6720,
+      "avg" : 5699.2
+    },
+    "graphNodesTraversed" : 15,
+    "patternsExecuted" : [ "Patient→HAS_CONDITION→*", "Patient→PRESCRIBED_MEDICATION→*", "Patient→STANDARD_TREATMENT→*" ],
+    "totalTimeMs" : 39954
+  }, {
+    "name" : "Cross-Specialty Contraindication",
+    "description" : "Find patients whose medications from different specialists are contraindicated with each other. Requires: Patient→TREATED_BY→Doctor[specialty=A]→PRESCRIBED→Med1 CROSS Patient→TREATED_BY→Doctor[specialty=B]→PRESCRIBED→Med2 WHERE Med1→CONTRAINDICATED→Med2",
+    "query" : "Which patients have potentially dangerous drug combinations from different specialist prescriptions",
+    "vectorOnlyChunks" : 5,
+    "knowledgeModelChunks" : 14,
+    "vectorLatencyMs" : {
+      "p50" : 18,
+      "p95" : 23,
+      "p99" : 23,
+      "min" : 15,
+      "max" : 23,
+      "avg" : 18.8
+    },
+    "kmLatencyMs" : {
+      "p50" : 6112,
+      "p95" : 7382,
+      "p99" : 7382,
+      "min" : 5672,
+      "max" : 7382,
+      "avg" : 6418.4
+    },
+    "graphNodesTraversed" : 16,
+    "patternsExecuted" : [ "Patient→TREATED_BY→*", "Patient→PRESCRIBED_MEDICATION→*", "Patient→CONTRAINDICATED_FOR→*" ],
+    "totalTimeMs" : 44819
+  } ],
+  "summary" : {
+    "avgChunkImprovement" : 148.0,
+    "avgLatencyOverhead" : 27384.939039517987,
+    "totalBenchmarkTimeMs" : 202113
+  }
+}

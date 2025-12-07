@@ -1,6 +1,8 @@
 package org.ddse.ml.cef.integration;
 
-import org.ddse.ml.cef.DuckDBTestConfiguration;
+import org.ddse.ml.cef.CefTestApplication;
+import org.ddse.ml.cef.config.DuckDbTestConfiguration;
+import org.ddse.ml.cef.config.VllmTestConfiguration;
 import org.ddse.ml.cef.base.MedicalDataTestBase;
 import org.ddse.ml.cef.dto.GraphQuery;
 import org.ddse.ml.cef.dto.ResolutionTarget;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.test.StepVerifier;
 
@@ -24,11 +27,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Integration test that loads the medical benchmark dataset into DuckDB and
  * exercises the retrieval pipeline via the MCP tool.
  */
-@SpringBootTest(classes = DuckDBTestConfiguration.class, properties = {
+@SpringBootTest(classes = CefTestApplication.class, properties = {
         "spring.main.allow-bean-definition-overriding=true",
-        "spring.test.mockmvc.enabled=false"
+        "spring.test.mockmvc.enabled=false",
+        "cef.graph.store=duckdb",
+        "cef.vector.store=duckdb"
 })
-@ActiveProfiles("duckdb")
+@Import({ DuckDbTestConfiguration.class, VllmTestConfiguration.class })
+@ActiveProfiles({ "vllm-integration", "duckdb" })
 class MedicalDataIntegrationTest extends MedicalDataTestBase {
 
     @Autowired

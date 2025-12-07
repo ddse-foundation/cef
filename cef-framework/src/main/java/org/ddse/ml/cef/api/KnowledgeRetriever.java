@@ -14,9 +14,10 @@ import java.util.UUID;
  * Primary interface for retrieving knowledge from the CEF framework.
  * 
  * Unified interface for:
- * 1. Hybrid Retrieval (Vector + Graph) via retrieve()
- * 2. Direct Graph Lookups (findNode, findByLabel)
- * 3. Graph Traversal (findRelated, expandFromSeeds)
+ * 1. Hybrid Retrieval (Vector + Graph) via retrieve(RetrievalRequest)
+ * 2. Agentic Retrieval via retrieve(String userQuery) - LLM parses query
+ * 3. Direct Graph Lookups (findNode, findByLabel)
+ * 4. Graph Traversal (findRelated, expandFromSeeds)
  * 
  * This is the ONLY interface clients and tests should use for retrieval.
  */
@@ -25,7 +26,7 @@ public interface KnowledgeRetriever {
     /**
      * Main entry point for Hybrid Retrieval.
      * Executes the optimal strategy (Vector-First, Graph-Only, or Hybrid) based on
-     * the request.
+     * the request. No LLM involved - caller builds the request.
      */
     Mono<RetrievalResult> retrieve(RetrievalRequest request);
 

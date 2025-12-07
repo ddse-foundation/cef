@@ -17,8 +17,8 @@ cef:
   vector:
     store: duckdb
     dimension: 768
-  database:
-    type: duckdb
+  graph:
+    store: duckdb  # Use DuckDB SQL-based graph store
   embedding:
     batch-size: 10
     dimensions: 768

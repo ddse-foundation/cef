@@ -1,6 +1,8 @@
 package org.ddse.ml.cef.mcp;
 
-import org.ddse.ml.cef.DuckDBTestConfiguration;
+import org.ddse.ml.cef.CefTestApplication;
+import org.ddse.ml.cef.config.DuckDbTestConfiguration;
+import org.ddse.ml.cef.config.VllmTestConfiguration;
 import org.ddse.ml.cef.base.MedicalDataTestBase;
 import org.ddse.ml.cef.dto.GraphQuery;
 import org.ddse.ml.cef.dto.ResolutionTarget;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.test.StepVerifier;
 
@@ -52,7 +55,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 
  * @author mrmanna
  */
-@SpringBootTest(classes = DuckDBTestConfiguration.class, properties = "spring.main.allow-bean-definition-overriding=true")
+@SpringBootTest(classes = CefTestApplication.class, properties = {
+    "spring.main.allow-bean-definition-overriding=true",
+    "cef.graph.store=duckdb",
+    "cef.vector.store=duckdb"
+})
+@Import({ DuckDbTestConfiguration.class, VllmTestConfiguration.class })
 @ActiveProfiles({ "vllm-integration", "duckdb" })
 @Disabled("Integration test requires external LLM; disabled for local infra-focused runs")
 @DisplayName("MCP Tool LLM Integration Tests with Real Medical Data")

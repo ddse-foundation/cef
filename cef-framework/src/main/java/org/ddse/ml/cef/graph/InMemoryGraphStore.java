@@ -3,7 +3,6 @@ package org.ddse.ml.cef.graph;
 import org.ddse.ml.cef.domain.Edge;
 import org.ddse.ml.cef.domain.Node;
 import org.ddse.ml.cef.domain.RelationType;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -23,9 +22,11 @@ import java.util.UUID;
  * Thread-safety: Delegates to thread-safe InMemoryKnowledgeGraph.
  * Reactive: All blocking operations run on boundedElastic scheduler.
  * 
+ * NOTE: This class is NOT a @Component. It is created by GraphStoreAutoConfiguration
+ * when cef.graph.store=in-memory or when no specific graph store is configured.
+ * 
  * @author mrmanna
  */
-@Component
 public class InMemoryGraphStore implements GraphStore {
 
     private final InMemoryKnowledgeGraph graph;
@@ -179,6 +180,12 @@ public class InMemoryGraphStore implements GraphStore {
     public Flux<Edge> batchAddEdges(List<Edge> edges) {
         return Flux.fromIterable(edges)
                 .flatMap(this::addEdge)
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @Override
+    public Flux<Edge> getEdgesForNode(UUID nodeId) {
+        return Flux.fromIterable(graph.getEdges(nodeId))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 }

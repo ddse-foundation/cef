@@ -25,9 +25,9 @@ cef:
 
   # Graph Configuration
   graph:
-    in-memory: true
     load-on-startup: true
     max-traversal-depth: 5
+    thread-safe: false  # Set to true for production (uses ReadWriteLock)
 
   # LLM Configuration
   llm:
@@ -95,6 +95,39 @@ cef:
     max-queries: 5
     deduplicate: true
 
+  # Resilience Configuration (Production Mode)
+  # Set enabled: true for production deployments
+  resilience:
+    enabled: false  # Set to true in production
+    embedding:
+      retry:
+        enabled: true
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2.0
+        max-wait-duration: 30s
+      circuit-breaker:
+        enabled: true
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+      timeout: 30s
+    llm:
+      retry:
+        enabled: true
+        max-attempts: 2
+        wait-duration: 2s
+        exponential-backoff-multiplier: 2.0
+        max-wait-duration: 60s
+      circuit-breaker:
+        enabled: true
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 10
+      timeout: 120s
+    database:
+      timeout: 10s
+
 # Spring Configuration
 spring:
   application:
@@ -125,6 +158,20 @@ spring:
     pool:
       initial-size: 5
       max-size: 20
+
+# Actuator Configuration (Observability)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      show-components: always
+  health:
+    defaults:
+      enabled: true
 
 # Logging
 logging:
