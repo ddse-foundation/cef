@@ -1,7 +1,46 @@
 # Known Issues
 
-**Version:** beta-0.5  
-**Last Updated:** November 27, 2025
+**Version:** v0.6 (Research)  
+**Last Updated:** December 7, 2025
+
+---
+
+## Status Snapshot (v0.6)
+
+- Scope: Research-grade only. Not production-ready.
+- New backends: Neo4j, PostgreSQL (pg-sql), PostgreSQL + Apache AGE (pg-age), DuckDB, In-Memory.
+- New vector stores: DuckDB, PostgreSQL pgvector, Neo4j vector index, In-Memory.
+
+---
+
+## Open Issues / Gaps
+
+### Security
+- HTTP security is opt-in (API-key/basic). JWT/OAuth2 not wired by default. Endpoints are not protected unless explicitly enabled.
+- Store-level sanitization not enforced everywhere: PgAGE builds Cypher strings with manual escaping; needs parameterization or sanitizer at the boundary.
+- Audit logging only wired for security events; destructive store ops (delete/clear) are not audited.
+
+### Resilience
+- Resilience patterns (retry/circuit-breaker/timeout) are applied only to embeddings. Graph/vector/database operations lack consistent timeouts/retries/circuit breakers.
+- No guardrails for runaway traversals beyond configurable depth caps; no per-call timeout on graph store methods.
+
+### Observability
+- Health indicators/metrics exist only for in-memory graph and embeddings. No health checks/metrics for Neo4j, PgSql, PgAge, DuckDB, pgvector chunk store.
+- No slow-query logging or tracing for graph/vector operations.
+
+### Graph Stores
+- PgAGE uses hand-built Cypher with manual escaping; risk of injection or malformed queries.
+- PgSql/PgAge lack per-call timeout and retry wrappers.
+- InMemoryGraphStore stubs: `findEdgesByRelationType` and `getNeighborsByRelationType` return empty; not feature-complete for dev scenarios.
+
+### Configuration / Defaults
+- Security disabled by default; production deployments must opt in and configure keys/claims explicitly.
+- In-memory thread-safe mode is opt-in (`cef.graph.thread-safe=true`); default is non-thread-safe.
+- Neo4j health/metrics not exposed; connection pool configuration is applied but not observed.
+
+### Testing / Execution
+- Live-stack integration tests (vLLM/Ollama/Neo4j/Postgres/AGE) run by default; they require external services. CI should exclude or gate them if infra is absent.
+- No automated validation of health/metrics endpoints for each backend.
 
 ---
 
@@ -9,200 +48,52 @@
 
 ### ✅ Tested Configurations
 
-The following configurations have been thoroughly tested and validated:
+The following configurations are exercised by integration tests (Testcontainers or live stack):
 
-- **Database:** DuckDB (embedded)
-- **LLM Provider:** vLLM with Qwen3-Coder-30B-A3B-Instruct-FP8
-- **Embedding Model:** Ollama with nomic-embed-text (768 dimensions)
-- **Graph Store:** JGraphT (in-memory)
-- **Operating Systems:** Linux
-
-### ⚠️ Untested Configurations
-
-The following configurations are implemented and available but **not yet tested in production**:
-
-#### Databases
-- **PostgreSQL** - Configuration available, schema provided, but not fully tested
-  - R2DBC reactive driver configured
-  - pgvector extension support included
-  - Migration scripts available
-  - **Status:** Needs integration testing
-
-#### LLM Providers
-- **OpenAI** - Client factory implemented, configuration available
-  - GPT-4, GPT-3.5 Turbo support
-  - **Status:** Needs API key testing
-  
-- **Ollama (LLM)** - Configuration available for Llama models
-  - Llama 3.2, Llama 3.1 support
-  - **Status:** Needs comprehensive testing
-
-#### Vector Stores
-- **Qdrant** - Interface implemented, configuration available
-  - **Status:** Needs deployment and integration testing
-  
-- **Pinecone** - Interface implemented, configuration available
-  - **Status:** Needs API key and integration testing
-
-#### Graph Stores
-- **Neo4j** - Interface defined, configuration available
-  - Cypher query support planned
-  - **Status:** Requires Neo4j instance and integration testing
+- **Graph/DB stores:** DuckDB (default), PostgreSQL pg-sql, PostgreSQL + Apache AGE (pg-age), Neo4j, In-Memory.
+- **Vector stores:** DuckDB VSS, PostgreSQL pgvector, Neo4j vector index, In-Memory.
+- **LLM/Embeddings:** vLLM (OpenAI-compatible, Qwen3-Coder-30B), Ollama embeddings (nomic-embed-text).
+- **OS:** Linux.
 
 ---
 
 ## Known Issues
 
-### 1. Memory Management (JGraphT)
+### 1) Security defaults off
+- HTTP security is opt-in (API-key/basic only). JWT/OAuth2 not wired by default. Endpoints are open unless enabled.
+- Store-level sanitization not enforced uniformly; PgAGE uses manual Cypher escaping.
+- Destructive store operations (delete/clear) not audited.
 
-**Issue:** In-memory graph store (JGraphT) may experience memory pressure with large knowledge bases.
+### 2) Resilience gaps
+- Retry/circuit-breaker/timeout applied only to embeddings. Graph/vector/database operations lack consistent resilience.
+- No per-call timeouts on PgSql/PgAge/Neo4j/DuckDB queries; traversal guardrails limited to depth caps.
 
-**Details:**
-- Recommended maximum: 100,000 nodes
-- Memory usage: ~350MB for 100K nodes, 500K edges
-- No automatic pagination or lazy loading
+### 3) Observability gaps
+- No health checks/metrics for Neo4j, PgSql, PgAge, DuckDB, pgvector chunk store.
+- No slow-query logging or tracing on graph/vector calls.
 
-**Workaround:**
-- Monitor heap usage with `-Xmx` settings
-- Consider Neo4j for graphs >100K nodes
-- Implement periodic graph pruning for time-bound data
+### 4) Graph store limitations
+- PgAGE Cypher built via string concatenation; risk of injection/malformed queries.
+- InMemoryGraphStore missing `findEdgesByRelationType` and `getNeighborsByRelationType` implementations.
+- In-memory thread safety is opt-in; default remains non-thread-safe.
 
-**Status:** By design - JGraphT is optimized for fast in-memory operations
+### 5) Vector search constraints
+- DuckDB VSS uses brute-force similarity (no ANN); performance drops beyond ~50K chunks.
 
----
+### 6) Postgres schema management
+- pg-sql/pgvector schemas require manual migration (no automatic DDL); Flyway/Liquibase recommended.
 
-### 2. Embedding Generation Performance
+### 7) Embedding throughput
+- Ollama embedding calls are single-threaded; large ingest is slow.
 
-**Issue:** Batch embedding generation can be slow for large document sets.
+### 8) Context size
+- Large subgraphs can exceed LLM context; no automatic summarization/truncation beyond depth limits.
 
-**Details:**
-- Single-threaded embedding calls to Ollama
-- ~200ms per embedding with nomic-embed-text
-- Initial index of 10,000 chunks takes ~30-40 minutes
-
-**Workaround:**
-- Use batch indexing during off-peak hours
-- Consider pre-generating embeddings offline
-- Increase Ollama concurrency settings
-
-**Status:** Planned for optimization in v0.6
+**Status:** v0.6 delivers foundational observability; enhanced coverage planned for v0.7
 
 ---
 
-### 3. PostgreSQL Schema Auto-Creation
-
-**Issue:** R2DBC does not automatically create tables on startup like JPA.
-
-**Details:**
-- Schema files provided in `src/main/resources/`
-- Requires manual execution or Flyway/Liquibase integration
-
-**Workaround:**
-- Run `schema-postgresql.sql` manually before first startup
-- Or configure Flyway migration (example in docs)
-
-**Status:** Documentation updated, auto-migration planned for v1.0
-
----
-
-### 4. Vector Search with DuckDB
-
-**Issue:** DuckDB vector similarity search uses brute-force comparison (no HNSW index).
-
-**Details:**
-- Performance degrades with >50,000 chunks
-- No approximate nearest neighbor (ANN) support in DuckDB VSS extension
-
-**Workaround:**
-- Use PostgreSQL with pgvector for large-scale deployments
-- Implement result caching for frequent queries
-
-**Status:** DuckDB limitation - consider PostgreSQL for production
-
----
-
-### 5. Concurrent Indexing
-
-**Issue:** Multiple concurrent indexing operations may cause race conditions in graph updates.
-
-**Details:**
-- JGraphT in-memory store is not thread-safe by default
-- Edge additions during concurrent node updates may be inconsistent
-
-**Workaround:**
-- Use sequential indexing for initial data load
-- Implement application-level locking for concurrent updates
-
-**Status:** Thread-safe wrapper planned for v0.6
-
----
-
-### 6. Context Window Token Limits
-
-**Issue:** Large relationship subgraphs may exceed LLM context windows.
-
-**Details:**
-- No automatic context pruning or summarization
-- Deep graph traversals (depth >3) can generate excessive context
-
-**Workaround:**
-- Limit traversal depth to 2-3 hops
-- Use `topK` parameter to control result size
-- Implement custom context filtering in application layer
-
-**Status:** Intelligent context truncation planned for v0.7
-
----
-
-### 7. Relationship Type Validation
-
-**Issue:** No runtime validation that edges match defined RelationType schemas.
-
-**Details:**
-- Framework accepts any relation type string
-- Semantic hints (HIERARCHY, CAUSALITY) are advisory only
-
-**Workaround:**
-- Implement application-level validation
-- Use strict entity builders with type checking
-
-**Status:** Schema validation framework planned for v0.8
-
----
-
-### 8. Docker Compose Networking
-
-**Issue:** Ollama container may not be accessible from host on some Docker Desktop versions.
-
-**Details:**
-- DNS resolution of `ollama:11434` fails from host machine
-- WSL2 networking issues on Windows
-
-**Workaround:**
-- Use `localhost:11434` instead of `ollama:11434` in application.yml
-- Or add `127.0.0.1 ollama` to /etc/hosts
-
-**Status:** Documentation updated with troubleshooting steps
-
----
-
-### 9. Query Performance Monitoring
-
-**Issue:** Limited built-in query performance metrics.
-
-**Details:**
-- No automatic slow query logging
-- Graph traversal metrics not exposed via actuator
-
-**Workaround:**
-- Enable DEBUG logging for `org.ddse.ml.cef`
-- Use Spring Boot Actuator with custom metrics
-
-**Status:** Enhanced observability planned for v0.6
-
----
-
-### 10. Multi-tenancy Support
+### 9. Multi-tenancy Support
 
 **Issue:** No built-in tenant isolation for knowledge graphs.
 
@@ -223,7 +114,7 @@ The following configurations are implemented and available but **not yet tested 
 If you encounter issues not listed here:
 
 1. Check the [USER_GUIDE.md](USER_GUIDE.md) Troubleshooting section
-2. Review [ARCHITECTURE.md](docs/ARCHITECTURE.md) for design constraints
+2. Review [ddse/ARCHITECTURE.md](ddse/ARCHITECTURE.md) for design constraints
 3. Enable DEBUG logging: `logging.level.org.ddse.ml.cef=DEBUG`
 4. Report via GitHub Issues with:
    - Configuration details (database, LLM provider, models)

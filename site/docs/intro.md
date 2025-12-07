@@ -26,7 +26,7 @@
 
 ---
 
-## Market Comparison (Grounded in CEF beta-0.5)
+## Market Comparison (v0.6)
 
 |                     | Vector-Only RAG (typical) | Graph DB + custom GraphRAG | **CEF Knowledge ORM** |
 |---------------------|---------------------------|----------------------------|-----------------------|
@@ -39,12 +39,15 @@
 
 ---
 
-## Beta-0.5 Facts (No Placeholders)
+## v0.6 Facts (No Placeholders)
 
-- **Tested stack:** DuckDB (embedded), JGraphT in-memory graph, vLLM Qwen3-Coder-30B for generation, Ollama nomic-embed-text (768d) for embeddings.
-- **Domains covered:** Medical clinical decision support (177 nodes / 455 edges) and SAP-style financial/supply-chain workflows.
-- **Results:** Medical benchmarks show +60–220% more relevant chunks; advanced separation/aggregation patterns add up to 9 extra chunks. SAP scenarios validate relationship traversal but keep chunk counts equal (5 vs 5) with higher latency (19–110% overhead) due to depth.
-- **Status:** PostgreSQL/pgvector, Neo4j, Qdrant, Pinecone, OpenAI LLMs are configured but **untested** (see Known Issues).
+- **Graph Stores (5 tested):** Neo4j, PostgreSQL+AGE, PostgreSQL SQL, DuckDB, In-Memory (JGraphT)
+- **Vector Stores (4 tested):** Neo4j, PostgreSQL+pgvector, DuckDB VSS, In-Memory
+- **LLM stack:** vLLM Qwen3-Coder-30B for generation, Ollama nomic-embed-text (768d) for embeddings
+- **Domains covered:** Medical clinical decision support (177 nodes / 455 edges) and SAP-style financial/supply-chain workflows
+- **Results:** Medical benchmarks show +60–220% more relevant chunks; advanced separation/aggregation patterns add up to 9 extra chunks
+- **Test coverage:** 178+ integration tests with real infrastructure via Testcontainers (no mocks)
+- **New in v0.6:** Resilience patterns (retry, circuit breaker, timeout), security foundations (API-key, sanitization, audit), thread safety
 
 ---
 

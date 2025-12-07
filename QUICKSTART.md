@@ -1,8 +1,17 @@
 # CEF Quick Start Guide
 
+**Version:** v0.6 (Research)
+
 This guide will help you set up and run the CEF (Context Engineering Framework) project.
 
 **CEF is an ORM for LLM context engineering** - just as Hibernate abstracts databases for transactional data, CEF abstracts knowledge stores for LLM context. You define knowledge models (entities, relationships), and CEF handles persistence, caching, and intelligent context assembly.
+
+## What's New in v0.6
+
+- **5 Graph Store Backends**: Neo4j, PostgreSQL (AGE + SQL), DuckDB, In-Memory
+- **Resilience**: Retry, circuit breaker, timeout for embeddings
+- **Security**: API-key auth, input sanitization (opt-in)
+- **178+ Integration Tests**: Real infrastructure via Testcontainers
 
 ## Prerequisites
 
@@ -22,11 +31,17 @@ This guide will help you set up and run the CEF (Context Engineering Framework) 
   docker-compose --version
   ```
 
+- **Ollama** (for embeddings)
+  ```bash
+  ollama serve  # Run locally, or use Docker
+  ollama pull nomic-embed-text
+  ```
+
 ---
 
-## Option 1: Quick Start (Recommended for First Run)
+## Option 1: Quick Start (DuckDB - Recommended)
 
-This uses DuckDB (embedded, no external database needed) and Ollama (local LLM).
+Uses DuckDB (embedded, no external database needed) and Ollama (local LLM).
 
 ### Step 1: Clone the Repository
 
@@ -35,41 +50,162 @@ git clone <repository-url>
 cd ced
 ```
 
-### Step 2: Start Ollama
-
-```bash
-docker-compose up -d
-```
-
-This starts only Ollama. DuckDB will be embedded in the application.
-
-### Step 3: Build and Test
+### Step 2: Build and Test
 
 ```bash
 # Build framework
 mvn clean install
 
-# Run comprehensive test suite
+# Run comprehensive test suite (178+ tests)
 cd cef-framework
 mvn test
 
 # Tests include:
-# - Medical domain: 177 nodes, 455 edges
-# - Financial domain: SAP-simulated data
-# - Benchmarks: Knowledge Model vs Vector-Only
+# - Neo4j integration (18 tests, Testcontainers)
+# - PostgreSQL AGE/SQL integration (36 tests)
+# - Security/validation tests (49+ tests)
+# - Medical/Financial domain benchmarks
 ```
 
-### Step 4: Verify Services
+### Step 3: Verify Results
 
 ```bash
-# Check Ollama is running
-curl http://localhost:11434/api/tags
-
-# Verify test execution
-ls -l cef-framework/target/surefire-reports/
+# Check test execution
+ls -l target/surefire-reports/
+cat target/surefire-reports/*.txt | grep -E "Tests run|PASSED|FAILED"
 ```
 
-### Step 5: Understanding the ORM Layer
+---
+
+## Option 2: With Neo4j (Production Graph Store)
+
+### Step 1: Start Neo4j
+
+```bash
+docker-compose up -d neo4j
+```
+
+### Step 2: Configure for Neo4j
+
+Create `application-neo4j.yml`:
+
+```yaml
+cef:
+  graph:
+    store: neo4j
+    neo4j:
+      uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+```
+
+### Step 3: Access Neo4j Browser
+
+Open http://localhost:7474 and login with neo4j/cef_password.
+
+---
+
+## Option 3: With PostgreSQL + pgvector (Pure SQL Graph)
+
+### Step 1: Start PostgreSQL
+
+```bash
+docker-compose up -d postgres
+```
+
+### Step 2: Configure for PostgreSQL (pg-sql)
+
+This uses pure SQL adjacency tables for graph storage (no extensions needed):
+
+```yaml
+cef:
+  graph:
+    store: pg-sql  # SQL adjacency tables
+  vector:
+    store: postgresql  # pgvector for embeddings
+    
+spring:
+  # JDBC for Graph Store
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  # R2DBC for Vector Store (reactive)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+---
+
+## Option 4: PostgreSQL with Apache AGE (Cypher on PostgreSQL)
+
+AGE uses a **separate PostgreSQL instance** for graph (Cypher) while sharing pgvector for vectors.
+
+### Step 1: Start PostgreSQL + AGE
+
+```bash
+docker-compose --profile age up -d postgres-age
+```
+
+### Step 2: Configure for AGE
+
+```yaml
+cef:
+  graph:
+    store: pg-age  # Apache AGE (Cypher queries)
+    postgres:
+      graph-name: cef_graph
+  vector:
+    store: postgresql  # pgvector (separate instance)
+
+spring:
+  # JDBC for Graph Store (AGE on port 5433)
+  datasource:
+    url: jdbc:postgresql://localhost:5433/cef_graph_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  # R2DBC for Vector Store (pgvector on port 5432)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+### Step 3: Access PostgreSQL AGE
+
+```bash
+psql -h localhost -p 5433 -U cef_user -d cef_graph_db
+```
+
+---
+
+## Option 5: Full Stack (All Services)
+
+### Step 1: Start Everything
+
+```bash
+docker-compose --profile age --profile minio up -d
+```
+
+### Step 2: Available Services
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Neo4j Browser** | http://localhost:7474 | neo4j / cef_password |
+| **PostgreSQL** | localhost:5432 | cef_user / cef_password |
+| **PostgreSQL AGE** | localhost:5433 | cef_user / cef_password |
+| **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
+| **Ollama API** | http://localhost:11434 | - |
+
+---
+
+## Understanding the ORM Layer
 
 The test suite demonstrates ORM patterns with real scenarios:
 
@@ -97,90 +233,7 @@ GraphPattern pattern = GraphPattern.multiHop(
 // Enterprise relationship patterns
 ```
 
-See [docs/EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for complete benchmark analysis.
-
----
-
-## Option 2: With PostgreSQL (Demonstrates Database Agnosticism)
-
-### Step 1: Start Services with PostgreSQL
-
-```bash
-docker-compose --profile postgres up -d
-```
-
-### Step 2: Configure Tests for PostgreSQL
-
-Create `cef-framework/src/test/resources/application-postgres.yml`:
-
-```yaml
-cef:
-  database:
-    type: postgresql
-    postgresql:
-      enabled: true
-
-spring:
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/cef_db
-    username: cef_user
-    password: cef_password
-```
-
-### Step 3: Run Tests with PostgreSQL
-
-```bash
-mvn clean install
-cd cef-framework
-mvn test -Dspring.profiles.active=postgres
-```
-
----
-
-## Option 3: Full Setup (PostgreSQL + MinIO + Ollama)
-
-For the complete demonstration including blob storage.
-
-### Step 1: Start All Services
-
-```bash
-docker-compose --profile postgres --profile minio up -d
-```
-
-### Step 2: Configure Tests for MinIO
-
-Create `cef-framework/src/test/resources/application-minio.yml`:
-
-```yaml
-cef:
-  database:
-    type: postgresql
-    postgresql:
-      enabled: true
-  
-  datasources:
-    blob-storage:
-      enabled: true
-      endpoint: http://localhost:9000
-      bucket: test-documents
-      access-key: minioadmin
-      secret-key: minioadmin
-```
-
-### Step 3: Run Tests with MinIO
-
-```bash
-mvn clean install
-cd cef-framework
-mvn test -Dspring.profiles.active=minio
-```
-
-### Step 4: Access Services
-
-- **Example App**: http://localhost:8080
-- **Ollama**: http://localhost:11434
-- **MinIO Console**: http://localhost:9001 (admin/minioadmin)
-- **PostgreSQL**: localhost:5432 (cef_user/cef_password)
+See [ddse/EVALUATION_SUMMARY.md](ddse/EVALUATION_SUMMARY.md) for complete benchmark analysis.
 
 ---
 
@@ -191,6 +244,9 @@ mvn test -Dspring.profiles.active=minio
 ```bash
 # Check Ollama
 curl http://localhost:11434/api/tags
+
+# Check Neo4j (if running)
+curl http://localhost:7474
 
 # Check PostgreSQL (if running)
 docker ps | grep cef-postgres
@@ -302,6 +358,16 @@ mvn spring-boot:run
 ---
 
 ## Quick Reference
+
+### Backend Combinations
+
+| Profile | Graph Store | Vector Store | Docker Services |
+|---------|-------------|--------------|-----------------|
+| **in-memory** | `in-memory` | `in-memory` | None required |
+| **duckdb** | `duckdb` | `duckdb` | None (embedded) |
+| **neo4j** | `neo4j` | `neo4j` | `docker-compose up -d neo4j` |
+| **pg-sql** | `pg-sql` | `postgresql` | `docker-compose up -d postgres` |
+| **pg-age** | `pg-age` | `postgresql` | `docker-compose --profile age up -d` |
 
 ### Default Configuration
 

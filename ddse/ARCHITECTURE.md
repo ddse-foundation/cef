@@ -1,8 +1,8 @@
 # Context Engineering Framework (CEF) - Architecture
 
-**Version:** beta-0.5  
-**Status:** Research Beta (Optimized for Rapid Prototyping)  
-**Date:** November 27, 2025  
+**Version:** v0.6 (Research)  
+**Status:** Research Edition (Production Patterns Implemented, Not Hardened)  
+**Date:** December 7, 2025  
 **Target Audience:** AI Conference - Technical Experts
 
 ---
@@ -17,6 +17,13 @@
 
 CEF provides an ORM layer for context engineering - define knowledge models (entities, relationships), persist them to dual stores, and query context through intelligent assembly strategies that automatically fall back to ensure comprehensive results.
 
+### v0.6 Enhancements
+
+- **5 Graph Store Backends**: Neo4j, PostgreSQL+AGE, PostgreSQL SQL, DuckDB, In-Memory
+- **Resilience Patterns**: Retry, circuit breaker, timeout for embeddings
+- **Security Foundations**: API-key auth, input sanitization, audit logging (opt-in)
+- **178+ Integration Tests**: Real infrastructure via Testcontainers (no mocks)
+
 ### Core Differentiators
 
 | Feature | RDBMS ORM (Hibernate) | Knowledge Model ORM (CEF) |
@@ -27,8 +34,8 @@ CEF provides an ORM layer for context engineering - define knowledge models (ent
 | **Context** | Transactional data | Knowledge context for LLMs |
 | **Fallback** | Query rewrite | 3-level automatic (relation → semantic → keyword) |
 | **Schema** | JPA annotations | Domain-agnostic Node/Edge model |
-| **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (JGraphT, Neo4j, Qdrant, Pinecone) |
-| **Scale** | Millions of rows | 100K nodes (JGraphT, tested) / millions (Neo4j, untested) |
+| **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (Neo4j, PG+AGE, PG SQL, DuckDB, JGraphT) |
+| **Scale** | Millions of rows | 100K nodes (JGraphT) / millions (Neo4j, tested via Testcontainers) |
 
 ---
 
@@ -253,23 +260,29 @@ public void registerTool() {
 
 **Result:** LLM learns graph structure on first call, constructs correct entity-aware queries without hardcoding.
 
-### 4. Pluggable Storage Architecture
+### 4. Pluggable Storage Architecture (v0.6)
 
 **GraphStore Interface**
 ```java
 public interface GraphStore {
-    void addNode(Node node);
-    void addEdge(Edge edge);
-    ReasoningContext traverse(UUID startId, int depth, Set<RelationSemantics> semantics);
-    Optional<GraphPath> findPath(UUID from, UUID to);
+    Mono<Void> initialize(List<RelationType> relationTypes);
+    Mono<Void> addNode(Node node);
+    Mono<Void> addEdge(Edge edge);
+    Mono<GraphSubgraph> traverse(UUID startId, int depth, Set<RelationSemantics> semantics);
+    Mono<Optional<GraphPathResult>> findPath(UUID from, UUID to);
     String getImplementation();
 }
 ```
 
-**Implementations:**
-- **JGraphTGraphStore** (default) - In-memory, <100K nodes, O(1) lookups
-- **Neo4jGraphStore** (optional) - Millions of nodes, Cypher queries
-- **TinkerPopGraphStore** (optional) - Gremlin-compatible (JanusGraph, etc.)
+**Graph Store Implementations (v0.6 - All Tested):**
+
+| Implementation | Backend | Activation | Tests |
+|---------------|---------|------------|-------|
+| **Neo4jGraphStore** | Neo4j 5.x Community | `cef.graph.store=neo4j` | 18 (Testcontainers) |
+| **PgAgeGraphStore** | PostgreSQL + Apache AGE | `cef.graph.store=pg-age` | 18 (Testcontainers) |
+| **PgSqlGraphStore** | Pure PostgreSQL SQL | `cef.graph.store=pg-sql` | 18 (Testcontainers) |
+| **DuckDbGraphStore** | DuckDB embedded | `cef.graph.store=duckdb` | Default |
+| **InMemoryGraphStore** | JGraphT | `cef.graph.store=in-memory` | Unit tests |
 
 **VectorStore Interface**
 ```java
@@ -281,29 +294,49 @@ public interface VectorStore {
 }
 ```
 
-**Implementations:**
-- **PostgresVectorStore** (default) - Postgres + pgvector extension
-- **DuckDBVectorStore** (lightweight) - DuckDB with VSS extension
-- **QdrantVectorStore** (optional) - Specialized vector DB
-- **PineconeVectorStore** (optional) - Cloud-hosted
+**Vector Store Implementations:**
+- **R2dbcChunkStore** - PostgreSQL + pgvector extension (reactive)
+- **DuckDbChunkStore** - DuckDB with VSS extension (default)
+- **Neo4jChunkStore** - Neo4j native vector indexes
+- **InMemoryChunkStore** - ConcurrentHashMap (development/testing)
+
+**Auto-Configuration (v0.6):**
+
+CEF uses Spring Boot auto-configuration to select stores based on properties:
+
+```java
+// GraphStoreAutoConfiguration.java
+@Bean
+@ConditionalOnProperty(name = "cef.graph.store", havingValue = "neo4j")
+public GraphStore neo4jGraphStore(Driver driver, CefGraphStoreProperties properties) {
+    return new Neo4jGraphStore(driver, properties.getNeo4j().getDatabase());
+}
+
+// ChunkStoreAutoConfiguration.java  
+@Bean
+@ConditionalOnProperty(name = "cef.vector.store", havingValue = "postgresql")
+public ChunkStore postgresChunkStore(ChunkRepository chunkRepository) {
+    return new R2dbcChunkStore(chunkRepository);
+}
+```
 
 **Configuration:**
 ```yaml
 cef:
   graph:
-    store: jgrapht  # jgrapht | neo4j | tinkerpop
-    jgrapht:
-      max-nodes: 100000
+    store: duckdb  # duckdb | in-memory | neo4j | pg-sql | pg-age
     neo4j:
       uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+      database: neo4j
+    postgres:
+      graph-name: cef_graph
+      max-traversal-depth: 5
   
   vector:
-    store: postgres  # postgres | duckdb | qdrant | pinecone
-    duckdb:
-      path: ./data/knowledge.duckdb
-    qdrant:
-      host: localhost
-      port: 6333
+    store: duckdb  # duckdb | in-memory | neo4j | postgresql
+    dimension: 768
 ```
 
 ---

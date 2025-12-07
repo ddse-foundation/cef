@@ -1,8 +1,8 @@
 # Context Engineering Framework (CEF) - Architecture
 
-**Version:** beta-0.5  
-**Status:** Research Beta (Optimized for Rapid Prototyping & Analysis)  
-**Date:** November 27, 2025  
+**Version:** 0.6  
+**Status:** Research Edition (Production Patterns Implemented, Not Hardened)  
+**Date:** December 7, 2025  
 **Target Audience:** AI Conference - Technical Experts
 
 ---
@@ -27,8 +27,8 @@ CEF provides an ORM layer for context engineering - define knowledge models (ent
 | **Context** | Transactional data | Knowledge context for LLMs |
 | **Fallback** | Query rewrite | 3-level automatic (relation → semantic → keyword) |
 | **Schema** | JPA annotations | Domain-agnostic Node/Edge model |
-| **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (JGraphT, Neo4j, Qdrant, Pinecone) |
-| **Scale** | Millions of rows | 100K nodes (JGraphT, tested) / millions (Neo4j, experimental) |
+| **Storage** | Pluggable (MySQL, Postgres, etc.) | Pluggable (Neo4j, PostgreSQL+AGE, PostgreSQL SQL, DuckDB, JGraphT) |
+| **Scale** | Millions of rows | 100K nodes (JGraphT) / millions (Neo4j, PostgreSQL - tested via Testcontainers) |
 
 ---
 

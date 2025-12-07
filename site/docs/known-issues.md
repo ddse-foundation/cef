@@ -1,41 +1,39 @@
 # Known Issues
 
-**Version:** beta-0.5  
-**Last Updated:** November 27, 2025
+**Version:** 0.6  
+**Last Updated:** December 7, 2025
 
 ---
 
 ## Testing Status
 
-### ✅ Tested Configurations
+### ✅ Tested Configurations (v0.6)
 
-The following configurations have been thoroughly tested and validated:
+The following configurations have been thoroughly tested with **178+ integration tests**:
 
-- **Database:** DuckDB (embedded)
-- **LLM Provider:** vLLM with Qwen3-Coder-30B-A3B-Instruct-FP8
-- **Embedding Model:** Ollama with nomic-embed-text (768 dimensions)
-- **Graph Store:** JGraphT (in-memory)
-- **Operating Systems:** Linux
+**Graph Stores (5 backends):**
+- **Neo4jGraphStore** - Neo4j 5.x Community (18 tests via Testcontainers)
+- **PgAgeGraphStore** - PostgreSQL + Apache AGE (18 tests via Testcontainers)
+- **PgSqlGraphStore** - Pure PostgreSQL SQL (18 tests via Testcontainers)
+- **DuckDbGraphStore** - DuckDB embedded (default)
+- **InMemoryGraphStore** - JGraphT in-memory
 
-### ⚠️ Untested Configurations
+**Vector Stores (4 backends):**
+- **Neo4jChunkStore** - Neo4j vector indexes
+- **R2dbcChunkStore** - PostgreSQL + pgvector (reactive R2DBC)
+- **DuckDbChunkStore** - DuckDB VSS extension (default)
+- **InMemoryChunkStore** - ConcurrentHashMap
 
-The following configurations are implemented and available but **not yet tested in production**:
+**LLM & Embeddings:**
+- **vLLM** with Qwen3-Coder-30B-A3B-Instruct-FP8
+- **Ollama** with nomic-embed-text (768 dimensions)
 
-#### Databases
-- **PostgreSQL** - Configuration available, schema provided, but not fully tested
-  - R2DBC reactive driver configured
-  - pgvector extension support included
-  - Migration scripts available
-  - **Status:** Needs integration testing
+### ⚠️ Configured but Untested
 
 #### LLM Providers
 - **OpenAI** - Client factory implemented, configuration available
   - GPT-4, GPT-3.5 Turbo support
   - **Status:** Needs API key testing
-  
-- **Ollama (LLM)** - Configuration available for Llama models
-  - Llama 3.2, Llama 3.1 support
-  - **Status:** Needs comprehensive testing
 
 #### Vector Stores
 - **Qdrant** - Interface implemented, configuration available
@@ -43,11 +41,6 @@ The following configurations are implemented and available but **not yet tested 
   
 - **Pinecone** - Interface implemented, configuration available
   - **Status:** Needs API key and integration testing
-
-#### Graph Stores
-- **Neo4j** - Interface defined, configuration available
-  - Cypher query support planned
-  - **Status:** Requires Neo4j instance and integration testing
 
 ---
 
@@ -123,17 +116,14 @@ The following configurations are implemented and available but **not yet tested 
 
 ### 5. Concurrent Indexing
 
-**Issue:** Multiple concurrent indexing operations may cause race conditions in graph updates.
+**Issue:** ✅ **RESOLVED in v0.6** - Multiple concurrent indexing operations are now thread-safe.
 
 **Details:**
-- JGraphT in-memory store is not thread-safe by default
-- Edge additions during concurrent node updates may be inconsistent
+- `ThreadSafeKnowledgeGraph.java` wraps JGraphT with ReadWriteLock
+- 21 concurrent tests including stress tests validate thread safety
+- Opt-in via `cef.graph.thread-safe=true`
 
-**Workaround:**
-- Use sequential indexing for initial data load
-- Implement application-level locking for concurrent updates
-
-**Status:** Thread-safe wrapper planned for v0.6
+**Status:** Resolved in v0.6
 
 ---
 

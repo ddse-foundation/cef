@@ -2,7 +2,6 @@ package org.ddse.ml.cef.service;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.stream.Collectors;
  * 
  * @author mrmanna
  */
-@Service
 public class DefaultEmbeddingService implements EmbeddingService {
 
     private final EmbeddingModel embeddingModel;

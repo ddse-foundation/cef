@@ -120,12 +120,25 @@ public class CefProperties {
         @Size(min = 1, max = 50)
         private String store = "duckdb";
 
+        /**
+         * Enable thread-safe wrapper for in-memory graph store.
+         */
+        private boolean threadSafe = false;
+
         public String getStore() {
             return store;
         }
 
         public void setStore(String store) {
             this.store = store;
+        }
+
+        public boolean isThreadSafe() {
+            return threadSafe;
+        }
+
+        public void setThreadSafe(boolean threadSafe) {
+            this.threadSafe = threadSafe;
         }
     }
 

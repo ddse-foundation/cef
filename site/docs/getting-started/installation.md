@@ -23,7 +23,7 @@ Add CEF Framework to your `pom.xml`:
     <dependency>
         <groupId>org.ddse.ml</groupId>
         <artifactId>cef-framework</artifactId>
-        <version>beta-0.5</version>
+        <version>0.6</version>
     </dependency>
     
     <!-- Spring Boot Starter (if not already included) -->
@@ -46,7 +46,7 @@ Add to your `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'org.ddse.ml:cef-framework:beta-0.5'
+    implementation 'org.ddse.ml:cef-framework:0.6'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }

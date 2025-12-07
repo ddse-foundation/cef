@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.ddse.ml</groupId>
         <artifactId>cef-parent</artifactId>
-        <version>beta-0.5</version>
+        <version>0.6</version>
     </parent>
 
     <artifactId>cef-framework</artifactId>
@@ -194,6 +194,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- ==================== END PRODUCTION READINESS ==================== -->

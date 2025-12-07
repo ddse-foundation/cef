@@ -1,5 +1,138 @@
 # Release Notes
 
+## Version 0.6 (Research) — December 7, 2025
+
+**Research Edition - Production Patterns Implemented, Not Hardened**
+
+This release transforms CEF from a single-backend prototype to a multi-backend framework with production patterns. While still research-grade, v0.6 implements foundational resilience, security, and pluggability that can evolve toward production readiness.
+
+---
+
+### 🎯 Release Highlights
+
+- **5 Graph Store Backends** - Neo4j, PostgreSQL AGE, PostgreSQL SQL, DuckDB, In-Memory
+- **4 Vector Store Backends** - Neo4j, PostgreSQL pgvector, DuckDB VSS, In-Memory
+- **Resilience Patterns** - Retry, circuit breaker, timeout for embedding services
+- **Security Foundations** - API-key auth, input sanitization, audit logging
+- **178+ Integration Tests** - Real infrastructure via Testcontainers (no mocks)
+- **Docker Compose** - Neo4j, PostgreSQL+pgvector, Apache AGE, MinIO
+
+---
+
+### ✨ New Features
+
+#### Pluggable Graph Stores (IDR-004)
+
+| Store | Config Value | Backend | Tests |
+|-------|--------------|---------|-------|
+| **Neo4jGraphStore** | `neo4j` | Neo4j 5.x Community | 18 tests |
+| **PgAgeGraphStore** | `pg-age` | PostgreSQL + Apache AGE | 18 tests |
+| **PgSqlGraphStore** | `pg-sql` | Pure PostgreSQL SQL | 18 tests |
+| **DuckDbGraphStore** | `duckdb` | DuckDB embedded | Default |
+| **InMemoryGraphStore** | `in-memory` | JGraphT | Development |
+
+#### Pluggable Vector Stores
+
+| Store | Config Value | Backend | Notes |
+|-------|--------------|---------|-------|
+| **Neo4jChunkStore** | `neo4j` | Neo4j vector indexes | Unified with Neo4j graph |
+| **R2dbcChunkStore** | `postgresql` | PostgreSQL pgvector | Reactive R2DBC |
+| **DuckDbChunkStore** | `duckdb` | DuckDB VSS | Default |
+| **InMemoryChunkStore** | `in-memory` | ConcurrentHashMap | Development |
+
+#### Dual-Store Configuration
+
+Graph and vector stores are **independently configurable**:
+
+```yaml
+cef:
+  graph:
+    store: neo4j  # neo4j | pg-age | pg-sql | duckdb | in-memory
+  vector:
+    store: neo4j  # neo4j | postgresql | duckdb | in-memory
+```
+
+#### Tested Backend Combinations
+
+| Profile | Graph Store | Vector Store | Use Case |
+|---------|-------------|--------------|----------|
+| **in-memory** | `in-memory` | `in-memory` | Development, CI/CD |
+| **duckdb** | `duckdb` | `duckdb` | Default, embedded |
+| **neo4j** | `neo4j` | `neo4j` | Production graphs |
+| **pg-sql** | `pg-sql` | `postgresql` | Max PostgreSQL compatibility |
+| **pg-age** | `pg-age` | `postgresql` | Cypher on PostgreSQL |
+
+#### Resilience Infrastructure
+
+```yaml
+cef:
+  resilience:
+    embedding:
+      retry:
+        max-attempts: 3
+        wait-duration: 1s
+      circuit-breaker:
+        failure-rate-threshold: 50
+      timeout: 30s
+```
+
+#### Thread Safety
+
+- `ThreadSafeKnowledgeGraph.java` - ReadWriteLock wrapper for InMemoryKnowledgeGraph
+- 21 concurrent tests including stress tests
+- Opt-in via `cef.graph.thread-safe=true`
+
+#### Security Foundations
+
+- `CefSecurityProperties.java` - Security configuration (JWT, API-Key, OAuth2)
+- `InputSanitizer.java` - SQL/Cypher injection, XSS, prompt injection prevention
+- `SecurityAuditLogger.java` - Audit logging for security events
+- **49 tests** for security components
+
+---
+
+### 🐳 Docker Compose Updates
+
+```bash
+# Neo4j (Graph Store)
+docker-compose up -d neo4j
+# Access: http://localhost:7474 (neo4j/cef_password)
+
+# PostgreSQL + AGE (Graph Store)
+docker-compose --profile age up -d postgres-age
+# Access: localhost:5433
+
+# Full stack
+docker-compose --profile age --profile minio up -d
+```
+
+---
+
+### ⚠️ Known Limitations (Research Edition)
+
+See [Known Issues](known-issues) for complete list:
+
+1. **Security defaults OFF** - Must opt-in via `cef.security.enabled=true`
+2. **PgAGE query safety** - Manual Cypher escaping, needs parameterization
+3. **Resilience coverage** - Only embeddings have retry/CB/timeout
+4. **Observability gaps** - No health indicators for Neo4j/Pg stores
+
+---
+
+### 📊 Test Coverage
+
+| Category | Tests | Notes |
+|----------|-------|-------|
+| Neo4j Integration | 18 | Testcontainers |
+| PostgreSQL AGE | 18 | Testcontainers |
+| PostgreSQL SQL | 18 | Testcontainers |
+| Security | 49 | InputSanitizer, AuditLogger |
+| Validation | 29 | JSR-380 DTOs |
+| Thread Safety | 21 | Concurrent stress tests |
+| **Total New** | **178+** | **All passing** |
+
+---
+
 ## Version beta-0.5 (November 27, 2025)
 
 **First Public Beta Release**
@@ -61,7 +194,7 @@ This is the initial beta release of the Context Engineering Framework (CEF) from
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>beta-0.5</version>
+    <version>0.6</version>
 </dependency>
 ```
 
@@ -225,20 +358,20 @@ SearchResult result = retriever.retrieve(
 
 ```yaml
 cef:
-  # Storage backend
-  database:
-    type: duckdb  # or postgresql
-    duckdb:
-      path: ./data/cef.duckdb
-  
-  # Graph store
+  # Graph store (v0.6 - 5 options)
   graph:
-    store: jgrapht  # or neo4j
-    preload-on-startup: true
+    store: duckdb  # duckdb | in-memory | neo4j | pg-sql | pg-age
+    neo4j:
+      uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+    postgres:
+      graph-name: cef_graph
   
-  # Vector store  
+  # Vector store (v0.6 - 4 options)
   vector:
-    store: duckdb  # or postgres, qdrant, pinecone
+    store: duckdb  # duckdb | in-memory | neo4j | postgresql
+    dimension: 768
   
   # LLM provider
   llm:
@@ -251,7 +384,16 @@ cef:
   embedding:
     provider: ollama  # or openai
     model: nomic-embed-text
-    dimension: 768
+    dimensions: 768
+  
+  # Resilience (v0.6)
+  resilience:
+    embedding:
+      retry:
+        max-attempts: 3
+      circuit-breaker:
+        failure-rate-threshold: 50
+      timeout: 30s
 ```
 
 ---
@@ -280,24 +422,23 @@ See [Known Issues](known-issues) for complete list and workarounds.
 
 ### 🛣️ Roadmap
 
-#### v0.6 (Planned - Q1 2026)
-- PostgreSQL production testing and validation
-- Thread-safe concurrent indexing
-- Enhanced observability (metrics, tracing)
+#### v0.7 (Planned - Q1 2026)
+- Health indicators for Neo4j/PostgreSQL stores
+- Enhanced resilience coverage (indexing, retrieval)
 - Performance optimizations for large graphs
-- OpenAI integration testing
-
-#### v0.7 (Planned - Q2 2026)
 - Intelligent context truncation
+
+#### v0.8 (Planned - Q2 2026)
 - L1/L2 caching implementation
 - Multi-tenancy patterns
-- Qdrant/Pinecone testing
+- Schema validation framework
+- OpenAI integration testing
 
 #### v1.0 (Planned - Q3 2026)
 - Production-grade release
 - Comprehensive test coverage
 - Auto-migration support
-- Schema validation framework
+- Security hardening
 - Community-tested all backends
 
 ---
@@ -344,7 +485,7 @@ See LICENSE file for details.
 
 ---
 
-**Thank you for trying CEF beta-0.5!**
+**Thank you for trying CEF v0.6!**
 
 We appreciate your feedback as we work toward v1.0. Please report any issues or share your success stories with the community.
 

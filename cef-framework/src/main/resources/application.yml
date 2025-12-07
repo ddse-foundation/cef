@@ -3,9 +3,22 @@
 # Organization: DDSE
 
 cef:
-  # Database Configuration (DuckDB is default, PostgreSQL is optional)
+  # Graph Store (v0.6)
+  graph:
+    store: duckdb  # duckdb | in-memory | neo4j | pg-sql | pg-age
+    load-on-startup: true
+    max-traversal-depth: 5
+    thread-safe: false  # Set to true for production (uses ReadWriteLock)
+
+  # Vector Store (v0.6)
+  vector:
+    store: duckdb  # duckdb | in-memory | neo4j | postgresql
+    dimension: 768  # Nomic embed-text default dimension
+    distance-metric: cosine  # Options: cosine, l2, inner_product
+
+  # Legacy database block (deprecated in v0.6; keep for backward compatibility)
   database:
-    type: duckdb  # Options: duckdb, postgresql
+    type: duckdb
     duckdb:
       path: ./data/cef.duckdb
       schema: graph
@@ -17,17 +30,6 @@ cef:
       username: cef_user
       password: cef_password
       schema: graph
-
-  # Vector Store Configuration
-  vector:
-    dimension: 768  # Nomic embed-text default dimension
-    distance-metric: cosine  # Options: cosine, l2, inner_product
-
-  # Graph Configuration
-  graph:
-    load-on-startup: true
-    max-traversal-depth: 5
-    thread-safe: false  # Set to true for production (uses ReadWriteLock)
 
   # LLM Configuration
   llm:

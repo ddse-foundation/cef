@@ -1,4 +1,4 @@
-# Benchmarks (beta-0.5)
+# Benchmarks (v0.6)
 
 Real numbers from the published benchmark runs (no synthetic placeholders). Reports live in `cef-framework/BENCHMARK_REPORT.md` and `cef-framework/BENCHMARK_REPORT_2.md`.
 

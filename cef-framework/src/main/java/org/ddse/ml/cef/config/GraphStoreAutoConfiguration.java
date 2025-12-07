@@ -1,9 +1,9 @@
 package org.ddse.ml.cef.config;
 
-import org.ddse.ml.cef.config.CefGraphStoreProperties.StoreType;
 import org.ddse.ml.cef.graph.*;
 import org.ddse.ml.cef.repository.duckdb.DuckDbGraphStore;
 import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Auto-configuration for CEF Graph Store selection.
@@ -60,9 +61,14 @@ public class GraphStoreAutoConfiguration {
     public Driver neo4jDriver(CefGraphStoreProperties properties) {
         log.info("Creating Neo4j Driver from properties");
         CefGraphStoreProperties.Neo4jConfig neo4jConfig = properties.getNeo4j();
+        Config driverConfig = Config.builder()
+                .withMaxConnectionPoolSize(neo4jConfig.getConnectionPoolSize())
+                .withConnectionTimeout(neo4jConfig.getConnectionTimeout(), TimeUnit.MILLISECONDS)
+                .build();
         return GraphDatabase.driver(
             neo4jConfig.getUri(),
-            AuthTokens.basic(neo4jConfig.getUsername(), neo4jConfig.getPassword())
+            AuthTokens.basic(neo4jConfig.getUsername(), neo4jConfig.getPassword()),
+            driverConfig
         );
     }
 
@@ -72,9 +78,9 @@ public class GraphStoreAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(name = "cef.graph.store", havingValue = "neo4j")
-    public GraphStore neo4jGraphStore(Driver driver) {
+    public GraphStore neo4jGraphStore(Driver driver, CefGraphStoreProperties properties) {
         log.info("Configuring Neo4jGraphStore - production graph database");
-        return new Neo4jGraphStore(driver);
+        return new Neo4jGraphStore(driver, properties.getNeo4j().getDatabase());
     }
 
     /**
@@ -113,12 +119,16 @@ public class GraphStoreAutoConfiguration {
     }
 
     /**
-     * In-Memory GraphStore - activated when cef.graph.store=in-memory
+     * Thread-safe wrapper for in-memory graph. Activated when cef.graph.thread-safe=true.
      */
     @Bean
     @ConditionalOnProperty(name = "cef.graph.store", havingValue = "in-memory")
-    public GraphStore inMemoryGraphStore(InMemoryKnowledgeGraph knowledgeGraph) {
-        log.info("Configuring InMemoryGraphStore - JGraphT in-memory graph");
+    public GraphStore inMemoryGraphStore(InMemoryKnowledgeGraph knowledgeGraph, CefProperties properties) {
+        if (properties.getGraph().isThreadSafe()) {
+            log.info("Configuring InMemoryGraphStore (thread-safe) - JGraphT in-memory graph");
+            return new InMemoryGraphStore(new ThreadSafeKnowledgeGraph(knowledgeGraph));
+        }
+        log.info("Configuring InMemoryGraphStore - JGraphT in-memory graph (non-thread-safe)");
         return new InMemoryGraphStore(knowledgeGraph);
     }
 

@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -39,8 +40,8 @@ public class DuckDbChunkStore implements ChunkStore {
                 : 768;
         this.embeddingDimension = configuredDimension > 0 ? configuredDimension : 768;
         // Log database URL to confirm which DB file we're using
-        try {
-            String url = jdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
+            String url = connection.getMetaData().getURL();
             log.info("DuckDbChunkStore initialized with database URL: {}", url);
         } catch (Exception e) {
             log.warn("Could not retrieve database URL: {}", e.getMessage());

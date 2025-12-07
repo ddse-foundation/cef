@@ -101,28 +101,61 @@ See [Benchmark Analysis](benchmarks) for complete benchmark analysis.
 
 ---
 
-## Option 2: With PostgreSQL (Experimental)
+## Option 2: With Neo4j (Production Graph Store)
 
-> **Note:** PostgreSQL support is currently in **alpha**. The configuration is provided for testing purposes but has not been fully validated in the v0.5 release.
+> **Note:** Neo4j support is fully tested in v0.6 with 18 integration tests via Testcontainers.
 
-### Step 1: Start Services with PostgreSQL
+### Step 1: Start Neo4j
 
 ```bash
-docker-compose --profile postgres up -d
+docker-compose up -d neo4j
 ```
 
-### Step 2: Configure Tests for PostgreSQL
-
-Create `cef-framework/src/test/resources/application-postgres.yml`:
+### Step 2: Configure for Neo4j
 
 ```yaml
 cef:
-  database:
-    type: postgresql
-    postgresql:
-      enabled: true
+  graph:
+    store: neo4j
+    neo4j:
+      uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+      database: neo4j
+  vector:
+    store: neo4j  # Neo4j 5.11+ has native vector indexes
+```
+
+### Step 3: Access Neo4j Browser
+
+Open http://localhost:7474 and login with neo4j/cef_password.
+
+---
+
+## Option 3: With PostgreSQL + pgvector
+
+> **Note:** PostgreSQL support is fully tested in v0.6 with two modes: `pg-sql` (pure SQL) and `pg-age` (Apache AGE Cypher).
+
+### Step 1: Start PostgreSQL
+
+```bash
+docker-compose up -d postgres
+```
+
+### Step 2: Configure for PostgreSQL (pg-sql mode)
+
+```yaml
+cef:
+  graph:
+    store: pg-sql  # Pure SQL adjacency tables
+  vector:
+    store: postgresql  # pgvector for embeddings
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/cef_db
     username: cef_user
@@ -132,21 +165,52 @@ spring:
 ### Step 3: Run Tests with PostgreSQL
 
 ```bash
-mvn clean install
 cd cef-framework
-mvn test -Dspring.profiles.active=postgres
+mvn test -Dspring.profiles.active=pg-sql
 ```
 
 ---
 
-## Option 3: Full Setup (PostgreSQL + MinIO + Ollama) (Experimental)
+## Option 4: PostgreSQL with Apache AGE (Cypher on PostgreSQL)
 
-> **Note:** Full stack setup with MinIO and PostgreSQL is **experimental** and intended for advanced users contributing to the framework's development.
+> **Note:** Apache AGE allows Cypher queries on PostgreSQL. Fully tested in v0.6.
+
+### Step 1: Start PostgreSQL + AGE
+
+```bash
+docker-compose --profile age up -d postgres-age
+```
+
+### Step 2: Configure for AGE
+
+```yaml
+cef:
+  graph:
+    store: pg-age  # Apache AGE for Cypher queries
+    postgres:
+      graph-name: cef_graph
+  vector:
+    store: postgresql
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/cef_graph_db
+    username: cef_user
+    password: cef_password
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+---
+
+## Option 5: Full Setup (All Services)
 
 ### Step 1: Start All Services
 
 ```bash
-docker-compose --profile postgres --profile minio up -d
+docker-compose --profile age --profile minio up -d
 ```
 
 ### Step 2: Configure Tests for MinIO

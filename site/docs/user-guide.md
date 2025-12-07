@@ -1,7 +1,7 @@
 # CEF User Guide: ORM for Context Engineering
 
-**Version:** beta-0.5  
-**Date:** November 27, 2025  
+**Version:** 0.6  
+**Date:** December 7, 2025  
 **Audience:** Java Developers Integrating CEF
 
 ---
@@ -62,7 +62,7 @@ Welcome to the Context Engineering Framework (CEF) - the **Hibernate for LLM Con
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.6</version>
 </dependency>
 ```
 

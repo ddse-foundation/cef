@@ -17,9 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -43,9 +40,6 @@ import java.util.stream.Collectors;
  * @author mrmanna
  * @since 0.6
  */
-@Service
-@Primary
-@ConditionalOnProperty(name = "cef.resilience.enabled", havingValue = "true")
 public class ResilientEmbeddingService implements EmbeddingService {
 
     private static final Logger log = LoggerFactory.getLogger(ResilientEmbeddingService.class);

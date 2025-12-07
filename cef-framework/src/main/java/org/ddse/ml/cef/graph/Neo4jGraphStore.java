@@ -65,12 +65,18 @@ public class Neo4jGraphStore implements GraphStore {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
     private final Driver driver;
+    private final String databaseName;
     private final Set<String> registeredRelationTypes = new HashSet<>();
     private volatile boolean initialized = false;
 
     public Neo4jGraphStore(Driver driver) {
+        this(driver, "neo4j");
+    }
+
+    public Neo4jGraphStore(Driver driver, String databaseName) {
         this.driver = driver;
-        log.info("Neo4jGraphStore created - production-scale graph store initialized");
+        this.databaseName = (databaseName != null && !databaseName.isBlank()) ? databaseName : "neo4j";
+        log.info("Neo4jGraphStore created for database '{}' - production-scale graph store initialized", this.databaseName);
     }
 
     @Override
@@ -78,7 +84,7 @@ public class Neo4jGraphStore implements GraphStore {
         return Mono.fromRunnable(() -> {
             log.info("Initializing Neo4jGraphStore with {} relation types", relationTypes.size());
             
-            try (Session session = driver.session(SessionConfig.forDatabase("neo4j"))) {
+            try (Session session = driver.session(sessionConfig())) {
                 // Create unique constraint on node ID
                 session.executeWrite(tx -> {
                     tx.run("""
@@ -116,7 +122,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Node> addNode(Node node) {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 return session.executeWrite(tx -> {
                     String cypher = """
                         MERGE (n:CefNode {id: $id})
@@ -157,7 +163,7 @@ public class Neo4jGraphStore implements GraphStore {
                         edge.getRelationType());
             }
             
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 return session.executeWrite(tx -> {
                     String relationType = EDGE_PREFIX + edge.getRelationType().toUpperCase();
                     
@@ -195,7 +201,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Node> getNode(UUID nodeId) {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run("""
                         MATCH (n:CefNode {id: $id})
                         RETURN n
@@ -212,7 +218,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Edge> getEdge(UUID edgeId) {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run("""
                         MATCH (source:CefNode)-[r {id: $id}]->(target:CefNode)
                         RETURN r, source.id AS sourceId, target.id AS targetId, type(r) AS relType
@@ -230,7 +236,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Flux<Node> findNodesByLabel(String label) {
         return Flux.defer(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run("""
                         MATCH (n:CefNode {label: $label})
                         RETURN n
@@ -249,7 +255,7 @@ public class Neo4jGraphStore implements GraphStore {
     public Flux<Edge> findEdgesByRelationType(String relationType) {
         return Flux.defer(() -> {
             String neo4jRelType = EDGE_PREFIX + relationType.toUpperCase();
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 String cypher = String.format("""
                         MATCH (source:CefNode)-[r:%s]->(target:CefNode)
                         RETURN r, source.id AS sourceId, target.id AS targetId, type(r) AS relType
@@ -269,7 +275,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Flux<Node> getNeighbors(UUID nodeId) {
         return Flux.defer(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run("""
                         MATCH (n:CefNode {id: $id})-[r]-(neighbor:CefNode)
                         RETURN DISTINCT neighbor
@@ -288,7 +294,7 @@ public class Neo4jGraphStore implements GraphStore {
     public Flux<Node> getNeighborsByRelationType(UUID nodeId, String relationType) {
         return Flux.defer(() -> {
             String neo4jRelType = EDGE_PREFIX + relationType.toUpperCase();
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 String cypher = String.format("""
                         MATCH (n:CefNode {id: $id})-[r:%s]-(neighbor:CefNode)
                         RETURN DISTINCT neighbor
@@ -308,7 +314,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<List<UUID>> findShortestPath(UUID sourceId, UUID targetId) {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run("""
                         MATCH path = shortestPath((source:CefNode {id: $sourceId})-[*]-(target:CefNode {id: $targetId}))
                         RETURN [node IN nodes(path) | node.id] AS nodeIds
@@ -330,7 +336,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Flux<Node> findKHopNeighbors(UUID nodeId, int depth) {
         return Flux.defer(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 String cypher = String.format("""
                         MATCH (start:CefNode {id: $id})-[*1..%d]-(neighbor:CefNode)
                         WHERE neighbor.id <> $id
@@ -351,7 +357,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<GraphSubgraph> extractSubgraph(List<UUID> seedNodeIds, int depth) {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 List<String> seedIds = seedNodeIds.stream()
                         .map(UUID::toString)
                         .collect(Collectors.toList());
@@ -368,13 +374,13 @@ public class Neo4jGraphStore implements GraphStore {
                         RETURN allNodes, rels
                         """, depth);
                 
-                Result result = session.run(cypher, Map.of("seedIds", seedIds));
+                Result nodeResult = session.run(cypher, Map.of("seedIds", seedIds));
                 
-                List<Node> nodes = new ArrayList<>();
-                List<Edge> edges = new ArrayList<>();
+                Set<Node> nodes = new HashSet<>();
+                Set<Edge> edges = new HashSet<>();
                 
-                if (result.hasNext()) {
-                    Record record = result.next();
+                if (nodeResult.hasNext()) {
+                    Record record = nodeResult.next();
                     
                     // Extract nodes
                     List<Object> nodeRecords = record.get("allNodes").asList();
@@ -383,12 +389,25 @@ public class Neo4jGraphStore implements GraphStore {
                             nodes.add(mapRecordToNode(((MapAccessor) nodeRecord).asMap()));
                         }
                     }
-                    
-                    // Note: Edge extraction from subgraph requires additional query
-                    // For simplicity, we return nodes only in subgraph - edges can be retrieved separately
+                }
+
+                // Extract edges within the same subgraph up to depth
+                String edgeCypher = String.format("""
+                        MATCH path = (seed:CefNode)-[rel*0..%d]-(connected:CefNode)
+                        WHERE seed.id IN $seedIds
+                        UNWIND relationships(path) AS r
+                        RETURN DISTINCT r AS r,
+                               startNode(r).id AS sourceId,
+                               endNode(r).id AS targetId,
+                               type(r) AS relType
+                        """, depth);
+
+                Result edgeResult = session.run(edgeCypher, Map.of("seedIds", seedIds));
+                while (edgeResult.hasNext()) {
+                    edges.add(mapRecordToEdge(edgeResult.next()));
                 }
                 
-                return new GraphSubgraph(nodes, edges);
+                return new GraphSubgraph(List.copyOf(nodes), List.copyOf(edges));
             }
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -396,7 +415,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Void> deleteNode(UUID nodeId) {
         return Mono.fromRunnable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 session.executeWrite(tx -> {
                     tx.run("""
                             MATCH (n:CefNode {id: $id})
@@ -412,7 +431,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Void> deleteEdge(UUID edgeId) {
         return Mono.fromRunnable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 session.executeWrite(tx -> {
                     tx.run("""
                             MATCH ()-[r {id: $id}]-()
@@ -428,7 +447,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<Void> clear() {
         return Mono.fromRunnable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 session.executeWrite(tx -> {
                     tx.run("MATCH (n:CefNode) DETACH DELETE n");
                     return null;
@@ -441,7 +460,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Mono<GraphStats> getStatistics() {
         return Mono.fromCallable(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 // Node count
                 long nodeCount = session.run("MATCH (n:CefNode) RETURN count(n) AS count")
                         .single().get("count").asLong();
@@ -493,7 +512,7 @@ public class Neo4jGraphStore implements GraphStore {
     @Override
     public Flux<Node> batchAddNodes(List<Node> nodes) {
         return Flux.defer(() -> {
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 List<Map<String, Object>> nodeParams = nodes.stream()
                         .map(node -> Map.<String, Object>of(
                                 "id", node.getId().toString(),
@@ -539,7 +558,7 @@ public class Neo4jGraphStore implements GraphStore {
         return Flux.defer(() -> {
             String neo4jRelType = EDGE_PREFIX + relationType.toUpperCase();
             
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 List<Map<String, Object>> edgeParams = edges.stream()
                         .map(edge -> Map.<String, Object>of(
                                 "edgeId", edge.getId().toString(),
@@ -657,12 +676,16 @@ public class Neo4jGraphStore implements GraphStore {
         return new Edge(edgeId, relType, sourceId, targetId, properties, weight);
     }
     
+    private SessionConfig sessionConfig() {
+        return SessionConfig.forDatabase(databaseName);
+    }
+    
     /**
      * Check if Neo4j connection is healthy.
      * Used by health indicators.
      */
     public boolean isHealthy() {
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig())) {
             session.run("RETURN 1").consume();
             return true;
         } catch (Exception e) {
@@ -688,7 +711,7 @@ public class Neo4jGraphStore implements GraphStore {
                 RETURN r, n.id as sourceId, m.id as targetId, type(r) as relType
                 """;
             
-            try (Session session = driver.session()) {
+            try (Session session = driver.session(sessionConfig())) {
                 Result result = session.run(cypher, Map.of("nodeId", nodeId.toString()));
                 while (result.hasNext()) {
                     Record record = result.next();

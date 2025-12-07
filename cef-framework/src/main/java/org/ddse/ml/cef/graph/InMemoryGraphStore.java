@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,35 +31,42 @@ import java.util.UUID;
 public class InMemoryGraphStore implements GraphStore {
 
     private final InMemoryKnowledgeGraph graph;
+    private final ThreadSafeKnowledgeGraph threadSafeGraph;
 
     public InMemoryGraphStore(InMemoryKnowledgeGraph graph) {
         this.graph = graph;
+        this.threadSafeGraph = null;
+    }
+
+    public InMemoryGraphStore(ThreadSafeKnowledgeGraph threadSafeGraph) {
+        this.graph = null;
+        this.threadSafeGraph = threadSafeGraph;
     }
 
     @Override
     public Mono<Void> initialize(List<RelationType> relationTypes) {
         // InMemoryKnowledgeGraph doesn't need explicit initialization
         // Relation types are validated on addEdge
-        return Mono.empty();
+        return Mono.<Void>empty();
     }
 
     @Override
     public Mono<Node> addNode(Node node) {
-        return Mono.fromRunnable(() -> graph.addNode(node))
+        return Mono.fromRunnable(() -> addNodeInternal(node))
                 .thenReturn(node)
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
     public Mono<Edge> addEdge(Edge edge) {
-        return Mono.fromRunnable(() -> graph.addEdge(edge))
+        return Mono.fromRunnable(() -> addEdgeInternal(edge))
                 .thenReturn(edge)
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
     public Mono<Node> getNode(UUID nodeId) {
-        return Mono.fromCallable(() -> graph.findNode(nodeId).orElse(null))
+        return Mono.fromCallable(() -> findNodeInternal(nodeId).orElse(null))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -73,7 +81,7 @@ public class InMemoryGraphStore implements GraphStore {
 
     @Override
     public Flux<Node> findNodesByLabel(String label) {
-        return Flux.fromIterable(graph.findNodesByLabel(label))
+        return Flux.fromIterable(findNodesByLabelInternal(label))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -86,7 +94,7 @@ public class InMemoryGraphStore implements GraphStore {
 
     @Override
     public Flux<Node> getNeighbors(UUID nodeId) {
-        return Flux.fromIterable(graph.getNeighbors(nodeId, 1))
+        return Flux.fromIterable(getNeighborsInternal(nodeId, 1))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -100,14 +108,14 @@ public class InMemoryGraphStore implements GraphStore {
     @Override
     public Mono<List<UUID>> findShortestPath(UUID sourceId, UUID targetId) {
         return Mono.<List<UUID>>fromCallable(() -> {
-            var pathResult = graph.findShortestPath(sourceId, targetId);
+            var pathResult = findShortestPathInternal(sourceId, targetId);
             return pathResult.map(result -> result.nodeIds()).orElse(List.of());
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
     public Flux<Node> findKHopNeighbors(UUID nodeId, int depth) {
-        return Flux.fromIterable(graph.getNeighbors(nodeId, depth))
+        return Flux.fromIterable(getNeighborsInternal(nodeId, depth))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -120,14 +128,14 @@ public class InMemoryGraphStore implements GraphStore {
 
             for (UUID seedId : seedNodeIds) {
                 // Add seed node
-                graph.findNode(seedId).ifPresent(nodes::add);
+                findNodeInternal(seedId).ifPresent(nodes::add);
 
                 // Get k-hop neighbors
-                nodes.addAll(graph.getNeighbors(seedId, depth));
+                nodes.addAll(getNeighborsInternal(seedId, depth));
 
                 // Collect edges between nodes
                 for (Node node : nodes) {
-                    edges.addAll(graph.getEdges(node.getId()));
+                    edges.addAll(getEdgesInternal(node.getId()));
                 }
             }
 
@@ -137,21 +145,21 @@ public class InMemoryGraphStore implements GraphStore {
 
     @Override
     public Mono<Void> deleteNode(UUID nodeId) {
-        return Mono.fromRunnable(() -> graph.removeNode(nodeId))
+        return Mono.fromRunnable(() -> removeNodeInternal(nodeId))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }
 
     @Override
     public Mono<Void> deleteEdge(UUID edgeId) {
-        return Mono.fromRunnable(() -> graph.removeEdge(edgeId))
+        return Mono.fromRunnable(() -> removeEdgeInternal(edgeId))
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }
 
     @Override
     public Mono<Void> clear() {
-        return Mono.fromRunnable(() -> graph.clear())
+        return Mono.fromRunnable(this::clearInternal)
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }
@@ -159,9 +167,9 @@ public class InMemoryGraphStore implements GraphStore {
     @Override
     public Mono<GraphStats> getStatistics() {
         return Mono.<GraphStats>fromCallable(() -> {
-            long nodeCount = graph.getNodeCount();
-            long edgeCount = graph.getEdgeCount();
-            Map<String, Long> labelCounts = graph.getLabelCounts();
+            long nodeCount = getNodeCountInternal();
+            long edgeCount = getEdgeCountInternal();
+            Map<String, Long> labelCounts = getLabelCountsInternal();
             // InMemoryKnowledgeGraph doesn't track edge types separately
             Map<String, Long> edgeTypeCounts = new HashMap<>();
             double avgDegree = nodeCount > 0 ? (double) edgeCount / nodeCount : 0.0;
@@ -185,7 +193,82 @@ public class InMemoryGraphStore implements GraphStore {
 
     @Override
     public Flux<Edge> getEdgesForNode(UUID nodeId) {
-        return Flux.fromIterable(graph.getEdges(nodeId))
+        return Flux.fromIterable(getEdgesInternal(nodeId))
                 .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // ===== Delegate helpers =====
+
+    private void addNodeInternal(Node node) {
+        if (threadSafeGraph != null) {
+            threadSafeGraph.addNode(node);
+        } else {
+            graph.addNode(node);
+        }
+    }
+
+    private void addEdgeInternal(Edge edge) {
+        if (threadSafeGraph != null) {
+            threadSafeGraph.addEdge(edge);
+        } else {
+            graph.addEdge(edge);
+        }
+    }
+
+    private Optional<Node> findNodeInternal(UUID nodeId) {
+        return threadSafeGraph != null ? threadSafeGraph.findNode(nodeId) : graph.findNode(nodeId);
+    }
+
+    private List<Node> findNodesByLabelInternal(String label) {
+        return threadSafeGraph != null ? threadSafeGraph.findNodesByLabel(label) : graph.findNodesByLabel(label);
+    }
+
+    private List<Node> getNeighborsInternal(UUID nodeId, int depth) {
+        return threadSafeGraph != null ? threadSafeGraph.getNeighbors(nodeId, depth) : graph.getNeighbors(nodeId, depth);
+    }
+
+    private Optional<GraphPathResult> findShortestPathInternal(UUID sourceId, UUID targetId) {
+        return threadSafeGraph != null ? threadSafeGraph.findShortestPath(sourceId, targetId)
+                : graph.findShortestPath(sourceId, targetId);
+    }
+
+    private Set<Edge> getEdgesInternal(UUID nodeId) {
+        return threadSafeGraph != null ? threadSafeGraph.getEdges(nodeId) : graph.getEdges(nodeId);
+    }
+
+    private void removeNodeInternal(UUID nodeId) {
+        if (threadSafeGraph != null) {
+            threadSafeGraph.removeNode(nodeId);
+        } else {
+            graph.removeNode(nodeId);
+        }
+    }
+
+    private void removeEdgeInternal(UUID edgeId) {
+        if (threadSafeGraph != null) {
+            threadSafeGraph.removeEdge(edgeId);
+        } else {
+            graph.removeEdge(edgeId);
+        }
+    }
+
+    private void clearInternal() {
+        if (threadSafeGraph != null) {
+            threadSafeGraph.clear();
+        } else {
+            graph.clear();
+        }
+    }
+
+    private long getNodeCountInternal() {
+        return threadSafeGraph != null ? threadSafeGraph.getNodeCount() : graph.getNodeCount();
+    }
+
+    private long getEdgeCountInternal() {
+        return threadSafeGraph != null ? threadSafeGraph.getEdgeCount() : graph.getEdgeCount();
+    }
+
+    private Map<String, Long> getLabelCountsInternal() {
+        return threadSafeGraph != null ? threadSafeGraph.getLabelCounts() : graph.getLabelCounts();
     }
 }

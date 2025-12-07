@@ -7,7 +7,7 @@
 
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-parent</artifactId>
-    <version>beta-0.5</version>
+    <version>0.6</version>
     <packaging>pom</packaging>
 
     <name>CEF - Context Engineering Framework</name>

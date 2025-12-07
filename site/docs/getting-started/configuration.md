@@ -91,24 +91,35 @@ spring:
 - Requires external service
 - More complex setup
 
-## Graph Store Configuration
+## Graph Store Configuration (v0.6 - 5 Backends)
 
-### JGraphT (Default)
+### DuckDB (Default)
+
+Embedded SQL graph store:
+
+```yaml
+cef:
+  graph:
+    store: duckdb  # Default - no external DB needed
+```
+
+**Recommended for:** Development, embedded deployments
+
+### In-Memory (JGraphT)
 
 In-memory graph with O(1) lookups:
 
 ```yaml
 cef:
   graph:
-    store: jgrapht
-    in-memory: true
-    load-on-startup: true  # Preload graph from database
-    max-traversal-depth: 5  # Maximum depth for graph traversal
+    store: in-memory
+    thread-safe: true  # Enable ReadWriteLock wrapper
+    max-traversal-depth: 5
 ```
 
-**Recommended for:** &lt;100K nodes, development, fast reads
+**Recommended for:** &lt;100K nodes, development, CI/CD
 
-### Neo4j (Planned)
+### Neo4j (Tested in v0.6)
 
 Dedicated graph database for large-scale deployments:
 
@@ -120,60 +131,105 @@ cef:
       uri: bolt://localhost:7687
       username: neo4j
       password: ${NEO4J_PASSWORD}
-      database: cef
+      database: neo4j
+      connection-pool-size: 50
 ```
 
-**Recommended for:** >100K nodes, production, complex graph queries
+**Recommended for:** >100K nodes, production, complex Cypher queries
 
-## Vector Store Configuration
+### PostgreSQL SQL (Tested in v0.6)
 
-### DuckDB Vector Store
+Pure SQL adjacency tables - no extensions needed:
 
-Uses DuckDB's vector functions:
+```yaml
+cef:
+  graph:
+    store: pg-sql
+    postgres:
+      max-traversal-depth: 5
+```
+
+**Recommended for:** Maximum PostgreSQL compatibility
+
+### PostgreSQL AGE (Tested in v0.6)
+
+Apache AGE extension for Cypher on PostgreSQL:
+
+```yaml
+cef:
+  graph:
+    store: pg-age
+    postgres:
+      graph-name: cef_graph
+```
+
+**Recommended for:** Cypher queries without Neo4j infrastructure
+
+## Vector Store Configuration (v0.6 - 4 Backends)
+
+### DuckDB Vector Store (Default)
+
+Uses DuckDB's VSS extension:
 
 ```yaml
 cef:
   vector:
     store: duckdb
     dimension: 768  # Embedding dimension (nomic-embed-text default)
-    distance-metric: cosine  # cosine, l2, inner_product
 ```
 
-**Pros:**
-- Same database as graph data
-- Simple setup
-- Fast for &lt;10K chunks
+**Pros:** Same database as graph data, simple setup, fast for &lt;10K chunks  
+**Cons:** Brute-force search only (no HNSW index)
 
-**Cons:**
-- Brute-force search only (no HNSW index)
-- Slower for >10K chunks
+### In-Memory Vector Store
 
-### PostgreSQL Vector Store
-
-Uses pgvector extension with HNSW index:
+ConcurrentHashMap-based for development:
 
 ```yaml
 cef:
   vector:
-    store: postgres
+    store: in-memory
     dimension: 768
-    distance-metric: cosine
-    postgres:
-      hnsw-index: true  # Enable HNSW index
-      hnsw-m: 16  # HNSW index parameter (higher = more accurate, slower build)
-      hnsw-ef-construction: 64  # HNSW build parameter
 ```
 
-**Pros:**
-- HNSW index for fast approximate search
-- Scalable to millions of vectors
-- Production-grade
+**Pros:** Zero dependencies, fast for testing  
+**Cons:** No persistence, limited scale
 
-**Cons:**
-- Requires pgvector extension
-- More complex setup
+### Neo4j Vector Store (Tested in v0.6)
 
-### Qdrant (Planned)
+Neo4j 5.11+ native vector indexes:
+
+```yaml
+cef:
+  vector:
+    store: neo4j
+    dimension: 768
+```
+
+**Pros:** Unified with Neo4j graph, production-grade  
+**Cons:** Requires Neo4j 5.11+
+
+### PostgreSQL Vector Store (Tested in v0.6)
+
+Uses pgvector extension with reactive R2DBC:
+
+```yaml
+cef:
+  vector:
+    store: postgresql
+    dimension: 768
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+**Pros:** HNSW index, scalable to millions of vectors, production-grade  
+**Cons:** Requires pgvector extension
+
+### Qdrant (Configured, Untested)
 
 Specialized vector database:
 

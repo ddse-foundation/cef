@@ -1,7 +1,7 @@
 # CEF User Guide: ORM for Context Engineering
 
-**Version:** beta-0.5  
-**Date:** November 27, 2025  
+**Version:** v0.6 (Research)  
+**Date:** December 7, 2025  
 **Audience:** Java Developers Integrating CEF
 
 ---
@@ -9,6 +9,13 @@
 ## Introduction
 
 Welcome to the Context Engineering Framework (CEF) - the **Hibernate for LLM Context**. This guide helps you integrate CEF into your application as an ORM layer for knowledge models, just as you would integrate Hibernate for transactional data models.
+
+### What's New in v0.6
+
+- **Pluggable Graph Stores**: Neo4j, PostgreSQL (AGE + SQL), DuckDB, In-Memory
+- **Resilience Patterns**: Retry, circuit breaker, timeout for embeddings
+- **Security Foundations**: API-key auth, input sanitization, audit logging
+- **Configuration-Driven**: Single property switches between backends
 
 ### Core Philosophy
 
@@ -42,13 +49,16 @@ Welcome to the Context Engineering Framework (CEF) - the **Hibernate for LLM Con
 ## Table of Contents
 
 1. [Quick Integration](#quick-integration)
-2. [Defining Knowledge Models](#defining-knowledge-models)
-3. [Setting Up ORM Layer](#setting-up-orm-layer)
-4. [Indexing Knowledge](#indexing-knowledge)
-5. [Retrieving Context](#retrieving-context)
-6. [Advanced Patterns](#advanced-patterns)
-7. [Production Deployment](#production-deployment)
-8. [Troubleshooting](#troubleshooting)
+2. [Graph Store Selection (v0.6)](#graph-store-selection)
+3. [Defining Knowledge Models](#defining-knowledge-models)
+4. [Setting Up ORM Layer](#setting-up-orm-layer)
+5. [Indexing Knowledge](#indexing-knowledge)
+6. [Retrieving Context](#retrieving-context)
+7. [Resilience Configuration (v0.6)](#resilience-configuration)
+8. [Security Configuration (v0.6)](#security-configuration)
+9. [Advanced Patterns](#advanced-patterns)
+10. [Production Deployment](#production-deployment)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -60,7 +70,7 @@ Welcome to the Context Engineering Framework (CEF) - the **Hibernate for LLM Con
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.6</version>
 </dependency>
 ```
 
@@ -70,28 +80,278 @@ Create `application.yml`:
 
 ```yaml
 cef:
-  # Storage backends (like configuring Hibernate datasource)
+  # Graph Store selection (v0.6 - 5 options)
   graph:
-    store: jgrapht  # in-memory for <100K entities
-    preload-on-startup: true
+    store: duckdb  # duckdb | in-memory | neo4j | pg-sql | pg-age
   
+  # Vector Store selection (v0.6 - 4 options)
   vector:
-    store: postgres  # persistent semantic search
+    store: duckdb  # duckdb | in-memory | neo4j | postgresql
     dimension: 768
   
-  # Embedding provider (like configuring JPA dialect)
+  # Embedding provider
   embedding:
     provider: ollama
     model: nomic-embed-text
     base-url: http://localhost:11434
 
 spring:
-  # R2DBC connection (like JPA datasource)
+  # R2DBC connection (required for postgresql vector store)
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/mydb
     username: postgres
     password: postgres
 ```
+
+---
+
+## Graph Store Selection
+
+### Available Backends (v0.6)
+
+| Store | Config Value | Best For | Requirements |
+|-------|--------------|----------|--------------|
+| **DuckDB** | `duckdb` | Default, embedded | None |
+| **In-Memory** | `in-memory` | Development, <100K nodes | None |
+| **Neo4j** | `neo4j` | Large graphs, Cypher | Neo4j 5.x |
+| **PostgreSQL SQL** | `pg-sql` | Max compatibility | PostgreSQL |
+| **PostgreSQL AGE** | `pg-age` | Cypher on PostgreSQL | PostgreSQL + AGE |
+
+---
+
+## Vector Store Selection
+
+### Available Backends (v0.6)
+
+| Store | Config Value | Best For | Requirements |
+|-------|--------------|----------|--------------|
+| **DuckDB** | `duckdb` | Default, embedded VSS | None |
+| **In-Memory** | `in-memory` | Development, testing | None |
+| **Neo4j** | `neo4j` | Unified with Neo4j graph | Neo4j 5.11+ |
+| **PostgreSQL** | `postgresql` | pgvector, production | PostgreSQL + pgvector |
+
+---
+
+## Deployment Patterns
+
+### Tested Backend Combinations
+
+These are the officially tested and benchmarked combinations:
+
+| Profile | Graph Store | Vector Store | Use Case |
+|---------|-------------|--------------|----------|
+| **in-memory** | `in-memory` | `in-memory` | Development, CI/CD, <10K chunks |
+| **duckdb** | `duckdb` | `duckdb` | Default, embedded, medium datasets |
+| **neo4j** | `neo4j` | `neo4j` | Production graphs, native Cypher |
+| **pg-sql** | `pg-sql` | `postgresql` | Max PostgreSQL compatibility |
+| **pg-age** | `pg-age` | `postgresql` | Cypher on PostgreSQL |
+
+### Development (Zero Infrastructure)
+```yaml
+cef:
+  graph:
+    store: in-memory
+  vector:
+    store: in-memory
+```
+
+### Default (Embedded DuckDB)
+```yaml
+cef:
+  graph:
+    store: duckdb
+  vector:
+    store: duckdb
+```
+
+### Production: Neo4j Unified
+```yaml
+cef:
+  graph:
+    store: neo4j
+  vector:
+    store: neo4j
+```
+
+### Production: PostgreSQL (Pure SQL)
+```yaml
+cef:
+  graph:
+    store: pg-sql  # SQL adjacency tables
+  vector:
+    store: postgresql  # pgvector
+```
+
+### Production: PostgreSQL (Apache AGE)
+```yaml
+cef:
+  graph:
+    store: pg-age  # Cypher via Apache AGE
+  vector:
+    store: postgresql  # pgvector
+```
+
+---
+
+## Understanding the Dual-Store Architecture
+
+### Key Concept: Independent Store Selection
+
+CEF separates graph storage (relationships) from vector storage (embeddings). This allows flexible deployment patterns where you can mix different backends:
+
+```yaml
+cef:
+  graph:
+    store: <graph-backend>    # How relationships are stored
+  vector:
+    store: <vector-backend>   # How embeddings are stored
+```
+
+**Why Two Stores?**
+- **Graph Store**: Optimized for traversal, relationship queries, Cypher/SQL
+- **Vector Store**: Optimized for similarity search, ANN indexes, embeddings
+
+### PostgreSQL: Two Ways to Store Graphs
+
+PostgreSQL can be used for graph storage in **two different ways**:
+
+| Mode | Config | Technology | Best For |
+|------|--------|------------|----------|
+| **pg-sql** | `cef.graph.store=pg-sql` | Pure SQL adjacency tables | Maximum compatibility, no extensions |
+| **pg-age** | `cef.graph.store=pg-age` | Apache AGE extension | Cypher queries on PostgreSQL |
+
+**pg-sql Architecture:**
+```
+┌────────────────────────────────────────────┐
+│         PostgreSQL (Single Instance)       │
+│                                            │
+│  ┌──────────────────┐  ┌────────────────┐  │
+│  │  Graph Tables    │  │  pgvector      │  │
+│  │  (SQL Adjacency) │  │  (Embeddings)  │  │
+│  │  DataSource/JDBC │  │  R2DBC Reactive│  │
+│  └──────────────────┘  └────────────────┘  │
+└────────────────────────────────────────────┘
+```
+
+**pg-age Architecture:**
+```
+┌──────────────────────┐    ┌──────────────────────┐
+│ PostgreSQL + AGE     │    │ PostgreSQL + pgvector│
+│ (Port 5433)          │    │ (Port 5432)          │
+│                      │    │                      │
+│  Graph Store         │    │  Vector Store        │
+│  (Cypher via AGE)    │    │  (Embeddings)        │
+│  DataSource/JDBC     │    │  R2DBC Reactive      │
+└──────────────────────┘    └──────────────────────┘
+```
+
+---
+
+## Full Backend Configurations
+
+### Neo4j Configuration (Graph + Vectors)
+
+```yaml
+cef:
+  graph:
+    store: neo4j
+    neo4j:
+      uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+      database: neo4j
+      connection-pool-size: 50
+      connection-timeout: 30000
+  vector:
+    store: neo4j
+    dimension: 768
+
+# No Spring datasource needed - Neo4j handles both
+```
+
+### PostgreSQL SQL Configuration (Single Instance)
+
+```yaml
+cef:
+  graph:
+    store: pg-sql
+    postgres:
+      max-traversal-depth: 5
+  vector:
+    store: postgresql
+
+spring:
+  # JDBC DataSource for Graph Store (SQL tables)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  # R2DBC for Vector Store (pgvector)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+### PostgreSQL AGE Configuration (Two Instances)
+
+```yaml
+cef:
+  graph:
+    store: pg-age
+    postgres:
+      graph-name: cef_graph
+      max-traversal-depth: 5
+  vector:
+    store: postgresql
+
+spring:
+  # JDBC DataSource for Graph Store (AGE on port 5433)
+  datasource:
+    url: jdbc:postgresql://localhost:5433/cef_graph_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  # R2DBC for Vector Store (pgvector on port 5432)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
+### DuckDB Configuration (Embedded)
+
+```yaml
+cef:
+  graph:
+    store: duckdb
+  vector:
+    store: duckdb
+    dimension: 768
+
+spring:
+  datasource:
+    url: jdbc:duckdb:./data/cef.duckdb
+    driver-class-name: org.duckdb.DuckDBDriver
+```
+
+### In-Memory Configuration (Zero Dependencies)
+
+```yaml
+cef:
+  graph:
+    store: in-memory
+  vector:
+    store: in-memory
+    dimension: 768
+
+# No datasource configuration needed
+```
+
+---
 
 ### Step 3: Initialize Knowledge Model
 
@@ -994,6 +1254,120 @@ public class KnowledgeSchemaEvolution {
     }
 }
 ```
+
+---
+
+## Resilience Configuration
+
+### Overview (v0.6)
+
+CEF v0.6 includes built-in resilience patterns for embedding services using Resilience4j. These are opt-in and configurable.
+
+### Configuration
+
+```yaml
+cef:
+  resilience:
+    embedding:
+      retry:
+        enabled: true
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+      circuit-breaker:
+        enabled: true
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 10s
+        wait-duration-in-open-state: 30s
+        permitted-calls-in-half-open-state: 3
+        sliding-window-size: 10
+      timeout:
+        enabled: true
+        duration: 30s
+```
+
+### Using ResilientEmbeddingService
+
+```java
+@Service
+public class MyService {
+    
+    @Autowired
+    private ResilientEmbeddingService embeddingService;  // Auto-wired when enabled
+    
+    public Mono<float[]> getEmbedding(String text) {
+        return embeddingService.embed(text)
+            .doOnError(e -> log.warn("Embedding failed after retries: {}", e.getMessage()));
+    }
+}
+```
+
+---
+
+## Security Configuration
+
+### Overview (v0.6)
+
+CEF v0.6 includes security foundations that are **disabled by default** (opt-in for research use).
+
+### API Key Authentication
+
+```yaml
+cef:
+  security:
+    enabled: true  # Default: false
+    api-key:
+      enabled: true
+      header-name: X-API-Key
+      keys:
+        - name: admin-key
+          key: ${CEF_ADMIN_API_KEY}
+          roles: [ADMIN, READ, WRITE]
+        - name: reader-key
+          key: ${CEF_READER_API_KEY}
+          roles: [READ]
+```
+
+### Input Sanitization
+
+CEF v0.6 includes `InputSanitizer` for protection against:
+- SQL injection
+- Cypher injection (Neo4j, AGE)
+- XSS attacks
+- Prompt injection
+
+```java
+@Autowired
+private InputSanitizer sanitizer;
+
+public void processUserInput(String input) {
+    String safe = sanitizer.sanitize(input);
+    // Use sanitized input with stores
+}
+```
+
+### Audit Logging
+
+```java
+@Autowired
+private SecurityAuditLogger auditLogger;
+
+public void sensitiveOperation(String userId) {
+    auditLogger.logSecurityEvent("SENSITIVE_ACCESS", userId, 
+        Map.of("resource", "patient-data"));
+}
+```
+
+### Security Gaps (Research Edition)
+
+See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for security limitations:
+- JWT/OAuth2 not wired by default
+- PgAGE uses manual Cypher escaping
+- Destructive operations not audited
 
 ---
 

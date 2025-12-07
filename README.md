@@ -2,12 +2,13 @@
 
 **Research-Grade ORM for LLM Context Engineering - Persist Knowledge Models, Query Context Intelligently**
 
-> **Community Edition Notice:** This framework is designed for **Developers (Rapid Prototyping)** and **Academics (Experimentation)**. It is **NOT** currently engineered for Enterprise Production use (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
+> **Research Edition (v0.6):** Designed for **Developers (rapid prototyping)** and **Academics/Researchers**. Production patterns implemented (resilience, security, validation) but not hardened for enterprise deployment. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for gaps.
 
-[![Version](https://img.shields.io/badge/version-beta--0.5-blue.svg)](RELEASE_NOTES.md)
+[![Version](https://img.shields.io/badge/version-v0.6--research-blue.svg)](RELEASE_NOTES.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Tests](https://img.shields.io/badge/tests-178%2B%20passing-brightgreen.svg)](cef-framework/src/test)
 
 ---
 
@@ -16,6 +17,14 @@
 **CEF is an ORM for LLM context engineering** - just as Hibernate abstracts relational databases for transactional data, CEF abstracts knowledge stores for LLM context. 
 
 **✅ Validated with comprehensive benchmarks:** Knowledge Model retrieves **60-220% more relevant content** than vector-only approaches for complex queries requiring relationship reasoning.
+
+### What's New in v0.6
+
+- 🗃️ **Pluggable Graph Stores** - Neo4j, PostgreSQL (AGE + pure SQL), DuckDB, In-Memory (config-driven)
+- 🛡️ **Security Foundations** - API-key/basic auth, input sanitization, audit logging (opt-in)
+- 🔄 **Resilience Patterns** - Retry, circuit breaker, timeout for embedding services
+- ✅ **178+ Integration Tests** - Real infrastructure via Testcontainers (no mocks)
+- 🐳 **Docker Compose** - Neo4j, PostgreSQL+pgvector, Apache AGE, MinIO
 
 ### Target Audience
 
@@ -29,7 +38,7 @@
 - 🗄️ **Knowledge Model ORM** - Define entities (nodes) and relationships (edges) like JPA @Entity
 - 🔄 **Dual Persistence** - Graph store (relationships) + Vector store (semantics)
 - 🔍 **Intelligent Context Assembly** - Relationship navigation + semantic search + keyword fallback
-- 📦 **Storage Agnostic** - Pluggable backends (JGraphT, Neo4j, Postgres, Qdrant)
+- 📦 **Storage Agnostic** - Pluggable backends: **Neo4j**, **PostgreSQL (AGE/SQL)**, **DuckDB**, **JGraphT**, **pgvector**
 - 🔌 **LLM Integration** - OpenAI, Ollama, vLLM with MCP tool support
 - 📄 **Parser System** - PDF, YAML, CSV, JSON with ANTLR support
 - ☁️ **Storage Adapters** - FileSystem, S3/MinIO
@@ -37,7 +46,7 @@
 
 **Author:** Mahmudur R Manna (mrmanna) - Founder and Principal Architect of DDSE  
 **Organization:** [DDSE Foundation](https://ddse-foundation.github.io/) (Decision-Driven Software Engineering)  
-**Date:** 2024
+**Date:** 2024-2025
 
 ---
 
@@ -63,14 +72,34 @@
 │  • Parser System (Domain transformation)                     │
 │  • DataSource Adapters (FileSystem, S3/MinIO)               │
 │  • Dual Persistence Coordinator                              │
+│  • Resilience Layer (Retry, Circuit Breaker, Timeout)       │
+│  • Security Layer (Auth, Sanitization, Audit)               │
 └─────────────────────────────────────────────────────────────┘
                              │
 ┌─────────────────────────────────────────────────────────────┐
-│                   Storage Layer                              │
-│  Graph Store: Node, Edge, RelationType (relationships)       │
-│  Vector Store: Chunk with embeddings (semantic context)      │
-│  Backends: DuckDB, PostgreSQL, Neo4j, Qdrant                 │
+│                   Storage Layer (v0.6)                       │
+│  Graph Store: Neo4j │ PostgreSQL+AGE │ PostgreSQL SQL │     │
+│                DuckDB │ In-Memory (JGraphT)                  │
+│  Vector Store: PostgreSQL+pgvector │ DuckDB VSS │ In-Memory │
+│  Selection: Single property (cef.graph.store, cef.vector.store) │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Graph Store Options (v0.6)
+
+| Store | Backend | Best For | Config Value |
+|-------|---------|----------|--------------|
+| **Neo4jGraphStore** | Neo4j 5.x | Large graphs, complex Cypher | `neo4j` |
+| **PgAgeGraphStore** | PostgreSQL + Apache AGE | Unified PG, Cypher queries | `pg-age` |
+| **PgSqlGraphStore** | Pure PostgreSQL SQL | Max compatibility, no extensions | `pg-sql` |
+| **DuckDbGraphStore** | DuckDB (default) | Embedded, single-file | `duckdb` |
+| **InMemoryGraphStore** | JGraphT | Development, <100K nodes | `in-memory` |
+
+```yaml
+# Select graph store via configuration
+cef:
+  graph:
+    store: neo4j  # neo4j | pg-age | pg-sql | duckdb | in-memory
 ```
 
 ---
@@ -94,35 +123,45 @@ mvn clean install
 ### 2. Start Infrastructure
 
 ```bash
-# Default: Only Ollama (DuckDB embedded, no external DB needed)
-docker-compose up -d
+# Minimal: DuckDB embedded + local Ollama (no Docker needed for DB)
+# Just ensure Ollama is running locally: ollama serve
 
-# With PostgreSQL (optional - demonstrates agnosticism)
-docker-compose --profile postgres up -d
+# PostgreSQL + pgvector (vector store)
+docker-compose up -d postgres
 
-# With MinIO (optional - demonstrates blob storage)
-docker-compose --profile minio up -d
+# Neo4j (graph store) + PostgreSQL (vector store)
+docker-compose up -d neo4j postgres
 
-# All services
-docker-compose --profile postgres --profile minio up -d
+# PostgreSQL with Apache AGE (graph + vector in one)
+docker-compose --profile age up -d postgres-age
+
+# All services (Neo4j + PostgreSQL + AGE + MinIO)
+docker-compose --profile age --profile minio up -d
 ```
 
 ### 3. Run Framework Tests
 
 ```bash
-# Run comprehensive test suite with benchmarks
+# Run comprehensive test suite (178+ tests)
 cd cef-framework
 mvn test
 
-# View benchmark results
-cat target/surefire-reports/org.ddse.ml.cef.benchmark.MedicalBenchmarkTest.txt
+# Tests include:
+# - Neo4j integration (18 tests, Testcontainers)
+# - PostgreSQL AGE integration (18 tests, Testcontainers)
+# - PostgreSQL SQL integration (18 tests, Testcontainers)
+# - Security/validation tests (49+ tests)
+# - Thread safety tests (21 tests)
+# - Medical/Financial domain benchmarks
 ```
 
 ### 4. Access Services
 
 - **Ollama**: http://localhost:11434/api/tags
-- **MinIO Console** (if enabled): http://localhost:9001
+- **Neo4j Browser** (if enabled): http://localhost:7474
 - **PostgreSQL** (if enabled): localhost:5432
+- **PostgreSQL AGE** (if enabled): localhost:5433
+- **MinIO Console** (if enabled): http://localhost:9001
 
 ---
 
@@ -135,26 +174,29 @@ ced/
 │   │   └── org/ddse/ml/cef/
 │   │       ├── domain/     # Node, Edge, Chunk, RelationType
 │   │       ├── api/        # KnowledgeIndexer, KnowledgeRetriever
-│   │       ├── storage/    # GraphStore, VectorStore interfaces
+│   │       ├── graph/      # GraphStore implementations (v0.6)
+│   │       │   ├── Neo4jGraphStore.java
+│   │       │   ├── PgAgeGraphStore.java
+│   │       │   ├── PgSqlGraphStore.java
+│   │       │   └── InMemoryGraphStore.java
+│   │       ├── config/     # Auto-configuration (v0.6)
+│   │       ├── security/   # Auth, sanitization, audit (v0.6)
+│   │       ├── health/     # Health indicators (v0.6)
 │   │       ├── retriever/  # Pattern-based retrieval
-│   │       └── graph/      # JGraphT integration
-│   ├── src/test/java/      # Comprehensive test suite
-│   │   └── org/ddse/ml/cef/
-│   │       ├── benchmark/  # Performance benchmarks
-│   │       ├── integration/# Medical domain tests
-│   │       └── base/       # SAP financial data tests
+│   │       └── parser/     # Domain transformation
+│   ├── src/test/java/      # 178+ integration tests
 │   └── pom.xml
 │
-├── docs/
-│   ├── EVALUATION_SUMMARY.md   # Benchmark analysis
-│   ├── benchmark_comparison.png # Performance charts
-│   ├── ARCHITECTURE.md         # Technical architecture
-│   └── requirements.md         # Specifications
+├── ddse/                   # Architecture Decision Records
+│   ├── v0.6/IDR-004.md     # v0.6 Implementation Decision
+│   ├── ARCHITECTURE.md     # Technical architecture
+│   └── requirements.md     # Specifications
 │
+├── docker-compose.yml      # Neo4j, PostgreSQL, AGE, MinIO
 ├── USER_GUIDE.md           # ORM integration guide
-├── RELEASE_NOTES.md        # Version beta-0.5
-├── KNOWN_ISSUES.md         # Testing status
-├── docker-compose.yml      # vLLM + Ollama services
+├── RELEASE_NOTES.md        # Version history
+├── KNOWN_ISSUES.md         # Limitations and gaps
+├── QUICKSTART.md           # Getting started
 └── pom.xml                 # Parent POM
 ```
 
@@ -162,14 +204,123 @@ ced/
 
 ## Configuration
 
+### Store Selection (v0.6)
+
+CEF v0.6 uses **two independent store configurations**:
+- `cef.graph.store` - Where relationships (nodes/edges) are stored
+- `cef.vector.store` - Where vector embeddings (chunks) are stored
+
+```yaml
+cef:
+  graph:
+    store: duckdb  # duckdb | in-memory | neo4j | pg-sql | pg-age
+  vector:
+    store: duckdb  # duckdb | in-memory | neo4j | postgresql
+```
+
+### PostgreSQL: Two Graph Storage Options
+
+PostgreSQL supports **two different** graph storage approaches:
+
+| Option | Config | Extension Required | Use Case |
+|--------|--------|-------------------|----------|
+| **pg-sql** | `cef.graph.store=pg-sql` | None | Maximum compatibility, SQL adjacency tables |
+| **pg-age** | `cef.graph.store=pg-age` | Apache AGE | Cypher queries on PostgreSQL |
+
+Both use `cef.vector.store=postgresql` for pgvector embeddings.
+
+### Tested Backend Combinations
+
+| Profile | Graph Store | Vector Store | Infrastructure |
+|---------|-------------|--------------|----------------|
+| **in-memory** | `in-memory` | `in-memory` | None |
+| **duckdb** | `duckdb` | `duckdb` | None (embedded) |
+| **neo4j** | `neo4j` | `neo4j` | Neo4j 5.11+ |
+| **pg-sql** | `pg-sql` | `postgresql` | PostgreSQL + pgvector |
+| **pg-age** | `pg-age` | `postgresql` | PostgreSQL + AGE + pgvector |
+
+### Deployment Patterns
+
+```yaml
+# Development (zero infrastructure)
+cef:
+  graph:
+    store: in-memory
+  vector:
+    store: in-memory
+
+# Default (embedded DuckDB for both)
+cef:
+  graph:
+    store: duckdb
+  vector:
+    store: duckdb
+
+# Production: Neo4j for both (unified)
+cef:
+  graph:
+    store: neo4j
+  vector:
+    store: neo4j
+
+# Production: PostgreSQL unified (AGE + pgvector)
+cef:
+  graph:
+    store: pg-age  # or pg-sql
+  vector:
+    store: postgresql
+
+# Hybrid: Neo4j graph + PostgreSQL vectors
+cef:
+  graph:
+    store: neo4j
+  vector:
+    store: postgresql
+```
+
+### Neo4j Configuration
+
+```yaml
+cef:
+  graph:
+    store: neo4j
+    neo4j:
+      uri: bolt://localhost:7687
+      username: neo4j
+      password: cef_password
+      database: neo4j
+  vector:
+    store: neo4j  # Uses Neo4j vector indexes
+```
+
+### PostgreSQL Configuration
+
+```yaml
+cef:
+  graph:
+    store: pg-sql  # or pg-age for Cypher support
+    postgres:
+      graph-name: cef_graph
+      max-traversal-depth: 5
+  vector:
+    store: postgresql  # Uses pgvector extension
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+```
+
 ### Default (DuckDB + Ollama)
 
 ```yaml
 cef:
-  database:
-    type: duckdb
-    duckdb:
-      path: ./data/cef.duckdb
+  graph:
+    store: duckdb
+  vector:
+    store: duckdb
+    dimension: 768
   
   llm:
     default-provider: ollama
@@ -178,34 +329,58 @@ cef:
       model: llama3.2:3b
 ```
 
-**Note:** Benchmark tests use vLLM (Qwen3-Coder-30B) which requires separate installation. See [vLLM documentation](https://docs.vllm.ai/) for setup.
-
-### Optional (PostgreSQL)
+### Resilience Configuration (v0.6)
 
 ```yaml
 cef:
-  database:
-    type: postgresql
-    postgresql:
-      enabled: true
-      host: localhost
-      port: 5432
-      database: cef_db
-      username: cef_user
-      password: cef_password
+  resilience:
+    embedding:
+      retry:
+        max-attempts: 3
+        wait-duration: 1s
+      circuit-breaker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+      timeout: 30s
 ```
 
-### Optional (MinIO/S3)
+### Security Configuration (v0.6)
 
 ```yaml
 cef:
-  datasources:
-    blob-storage:
+  security:
+    enabled: true  # Default: false (opt-in)
+    api-key:
       enabled: true
-      endpoint: http://localhost:9000
-      bucket: medical-documents
-      access-key: minioadmin
-      secret-key: minioadmin
+      header-name: X-API-Key
+      keys:
+        - name: dev-key
+          key: ${CEF_API_KEY}
+          roles: [READ, WRITE]
+```
+
+### Optional (PostgreSQL + pgvector)
+
+```yaml
+cef:
+  graph:
+    store: pg-sql
+  vector:
+    store: postgresql
+
+spring:
+  # JDBC for Graph Store
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
+    driver-class-name: org.postgresql.Driver
+  
+  # R2DBC for Vector Store
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cef_db
+    username: cef_user
+    password: cef_password
 ```
 
 ---
@@ -220,11 +395,11 @@ Add to your `pom.xml`:
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>beta-0.5</version>
+    <version>0.6</version>
 </dependency>
 ```
 
-**Note:** Beta release tested with DuckDB, vLLM (Qwen3-Coder-30B for generation), and Ollama (nomic-embed-text for embeddings). OpenAI integration is configured but untested. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+**Note:** v0.6 tested with Neo4j 5.x, PostgreSQL 16 (pgvector, AGE), DuckDB, vLLM (Qwen3-Coder-30B), and Ollama (nomic-embed-text). See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for gaps.
 
 ### 2. Define Domain Entities
 
@@ -306,12 +481,12 @@ See [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.
 ## Documentation
 
 - [USER_GUIDE.md](USER_GUIDE.md) - Complete ORM integration guide
-- [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) - Benchmark analysis (60-220% improvement proven)
-- [RELEASE_NOTES.md](RELEASE_NOTES.md) - Version beta-0.5 release notes
-- [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - Testing status and limitations
 - [QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture
-- [requirements.md](docs/requirements.md) - Detailed specifications
+- [RELEASE_NOTES.md](RELEASE_NOTES.md) - Version v0.6 release notes
+- [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - Limitations and production gaps
+- [ddse/ARCHITECTURE.md](ddse/ARCHITECTURE.md) - Technical architecture
+- [ddse/v0.6/IDR-004.md](ddse/v0.6/IDR-004.md) - v0.6 Implementation Decision Record
+- [ddse/EVALUATION_SUMMARY.md](ddse/EVALUATION_SUMMARY.md) - Benchmark analysis (60-220% improvement)
 
 ---
 
@@ -322,11 +497,15 @@ See [EVALUATION_SUMMARY.md](docs/EVALUATION_SUMMARY.md) for detailed analysis.
 - **Spring AI 1.0.0-M4** - LLM integration
 - **Spring WebFlux** - Reactive web
 - **Spring Data R2DBC** - Reactive database
+- **Resilience4j** - Fault tolerance (v0.6)
 - **JGraphT 1.5.2** - In-memory graph
+- **Neo4j Driver 5.x** - Native graph database (v0.6)
+- **Apache AGE** - PostgreSQL graph extension (v0.6)
 - **ANTLR 4.13.1** - Parser generator
 - **DuckDB 1.1.3** - Default embedded database
-- **PostgreSQL 16** - Optional external database (with pgvector)
+- **PostgreSQL 16** - External database (with pgvector)
 - **Apache PDFBox 3.0.3** - PDF processing
+- **Testcontainers** - Integration testing (v0.6)
 
 ---
 
@@ -344,10 +523,14 @@ See [LICENSE](LICENSE) file for full license text.
 
 Contributions are welcome! Please:
 
-1. Test untested configurations (PostgreSQL, OpenAI, Neo4j)
+1. Run the test suite (`mvn test` in cef-framework)
 2. Report issues with detailed logs and reproduction steps
 3. Submit pull requests with test coverage
-4. Review [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for areas needing validation
+4. Review [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for areas needing work:
+   - PgAGE query parameterization
+   - Health indicators for all backends
+   - Resilience patterns for graph/vector stores
+   - Security hardening
 
 For questions, contact DDSE Foundation at https://ddse-foundation.github.io/
 
@@ -362,4 +545,3 @@ For questions, contact DDSE Foundation at https://ddse-foundation.github.io/
 ## About DDSE Foundation
 
 This framework is developed by the **DDSE Foundation** (Decision-Driven Software Engineering), an open-source initiative advancing principled approaches to software architecture and engineering.
-

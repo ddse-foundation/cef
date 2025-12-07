@@ -1,6 +1,6 @@
 # Hands-On: Build a Knowledge Model in 30 Minutes
 
-This tutorial walks through the same patterns exercised by the medical benchmark: defining relation semantics, indexing nodes/edges/chunks, and retrieving multi-hop context. Everything below is grounded in the beta-0.5 code and tests (no placeholders).
+This tutorial walks through the same patterns exercised by the medical benchmark: defining relation semantics, indexing nodes/edges/chunks, and retrieving multi-hop context. Everything below is grounded in the v0.6 code and tests (no placeholders).
 
 ---
 
@@ -10,7 +10,7 @@ This tutorial walks through the same patterns exercised by the medical benchmark
 <dependency>
     <groupId>org.ddse.ml</groupId>
     <artifactId>cef-framework</artifactId>
-    <version>beta-0.5</version>
+    <version>0.6</version>
 </dependency>
 ```
 
@@ -23,9 +23,9 @@ This tutorial walks through the same patterns exercised by the medical benchmark
 ```yaml
 cef:
   graph:
-    store: jgrapht           # Tested to ~100K nodes in-memory
+    store: duckdb            # Default - or: in-memory, neo4j, pg-sql, pg-age
   vector:
-    store: duckdb            # Embedded, no external DB
+    store: duckdb            # Default - or: in-memory, neo4j, postgresql
   llm:
     default-provider: ollama
     ollama:
@@ -37,7 +37,7 @@ spring:
     web-application-type: reactive
 ```
 
-> Tested combo matches the benchmark harness: DuckDB + JGraphT + Ollama embeddings. vLLM (Qwen3-Coder-30B) was used for generation; you can plug it in later without changing code.
+> v0.6 supports 5 graph backends and 4 vector backends. The default (DuckDB) requires no external services. vLLM (Qwen3-Coder-30B) was used for benchmark generation; you can plug it in later without changing code.
 
 ---
 

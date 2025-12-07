@@ -1,6 +1,20 @@
-# Validation & Test Coverage
+# Validation & Test Coverage (v0.6)
 
-Everything below maps to concrete tests in `cef-framework/src/test/java`—no placeholder claims.
+**178+ integration tests** map to concrete tests in `cef-framework/src/test/java`—no placeholder claims.
+
+## v0.6 Test Summary
+
+| Category | Tests | Notes |
+|----------|-------|----- |
+| Neo4j Integration | 18 | Testcontainers |
+| PostgreSQL AGE | 18 | Testcontainers |
+| PostgreSQL SQL | 18 | Testcontainers |
+| Security | 49 | InputSanitizer, AuditLogger |
+| Validation | 29 | JSR-380 DTOs |
+| Thread Safety | 21 | Concurrent stress tests |
+| Configuration | 18 | CefProperties validation |
+| Resilience | 7 | Real Ollama |
+| **Total** | **178+** | **All passing** |
 
 ---
 
